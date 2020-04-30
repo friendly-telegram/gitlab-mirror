@@ -87,7 +87,7 @@ class CommandDispatcher:
             except Exception as e:
                 logging.exception("Command failed")
                 try:
-                    if await message.client.is_bot():
+                    if self._bot:
                         await message.respond("<b>Sorry, something went wrong!</b>")
                     else:
                         await message.edit("<b>Request failed! Request was</b> <code>"
