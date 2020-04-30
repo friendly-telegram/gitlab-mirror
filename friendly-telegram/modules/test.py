@@ -46,6 +46,7 @@ class TestMod(loader.Module):
     def config_complete(self):
         self.name = self.strings["name"]
 
+    @loader.unrestricted
     async def pingcmd(self, message):
         """Does nothing"""
         await utils.answer(message, self.strings["pong"])
@@ -83,6 +84,7 @@ class TestMod(loader.Module):
         await message.client.send_file(message.to_id, logs, caption=self.strings["logs_caption"].format(lvl))
         await message.delete()
 
+    @loader.owner
     async def suspendcmd(self, message):
         """.suspend <time>
            Suspends the bot for N seconds"""

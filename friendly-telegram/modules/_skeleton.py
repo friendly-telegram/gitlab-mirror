@@ -39,6 +39,7 @@ class YourMod(loader.Module):
     def config_complete(self):
         self.name = self.strings["name"]
 
+    @loader.owner  # security mode - only permit (user)bot owner to use this command
     async def examplecmd(self, message):
         """Does something when you type .example (hence, named examplecmd)"""
         logger.debug("We logged something!")

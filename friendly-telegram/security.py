@@ -46,6 +46,68 @@ DEFAULT_PERMISSIONS = (OWNER | SUDO)
 ALL = (1 << 13) - 1
 
 
+def owner(func):
+    return _sec(func, OWNER)
+
+
+def sudo(func):
+    return _sec(func, OWNER | SUDO)
+
+
+def support(func):
+    return _sec(func, OWNER | SUDO | SUPPORT)
+
+
+def group_owner(func):
+    return _sec(func, OWNER | SUDO | GROUP_OWNER)
+
+
+def group_admin_add_admins(func):
+    return _sec(func, OWNER | SUDO | GROUP_ADMIN_ADD_ADMINS)
+
+
+def group_admin_change_info(func):
+    return _sec(func, OWNER | SUDO | GROUP_ADMIN_CHANGE_INFO)
+
+
+def group_admin_ban_users(func):
+    return _sec(func, OWNER | SUDO | GROUP_ADMIN_BAN_USERS)
+
+
+def group_admin_delete_messages(func):
+    return _sec(func, OWNER | SUDO | GROUP_ADMIN_DELETE_MESSAGES)
+
+
+def group_admin_pin_messages(func):
+    return _sec(func, OWNER | SUDO | GROUP_ADMIN_PIN_MESSAGES)
+
+
+def group_admin_invite_users(func):
+    return _sec(func, OWNER | SUDO | GROUP_ADMIN_INVITE_USERS)
+
+
+def group_admin(func):
+    return _sec(func, OWNER | SUDO | GROUP_ADMIN)
+
+
+def group_member(func):
+    return _sec(func, OWNER | SUDO | GROUP_MEMBER)
+
+
+def pm(func):
+    return _sec(func, OWNER | SUDO | PM)
+
+
+def unrestricted(func):
+    return _sec(func, ALL)
+
+
+def _sec(func, flags):
+    prev = getattr(func, "security", 0)
+    func.security = prev | flags
+    return func
+
+
 class SecurityManager:
     def __init__(self, db, bot):
         self._db = db

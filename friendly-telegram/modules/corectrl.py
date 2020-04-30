@@ -86,6 +86,7 @@ class CoreMod(loader.Module):
                      list(set(self._db.get(main.__name__, "blacklist_chats", [])) - set([chatid])))
         await utils.answer(message, self.strings["unblacklisted"].format(chatid))
 
+    @loader.owner
     async def setprefixcmd(self, message):
         """Sets command prefix"""
         args = utils.get_args(message)
@@ -97,6 +98,7 @@ class CoreMod(loader.Module):
         await utils.answer(message, self.strings["prefix_set"].format(newprefix=utils.escape_html(args[0]),
                                                                       oldprefix=utils.escape_html(oldprefix)))
 
+    @loader.owner
     async def addaliascmd(self, message):
         """Set an alias for a command"""
         args = utils.get_args(message)
@@ -111,6 +113,7 @@ class CoreMod(loader.Module):
         else:
             await utils.answer(message, self.strings["no_command"].format(utils.escape_html(cmd)))
 
+    @loader.owner
     async def delaliascmd(self, message):
         """Remove an alias for a command"""
         args = utils.get_args(message)
@@ -166,6 +169,7 @@ class CoreMod(loader.Module):
         self._db.set(main.__name__, "language", langs)
         await utils.answer(message, self.strings["lang_set"])
 
+    @loader.owner
     async def cleardbcmd(self, message):
         """Clears the entire database, effectively performing a factory reset"""
         self._db.clear()

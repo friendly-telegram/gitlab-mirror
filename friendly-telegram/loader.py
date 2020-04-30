@@ -25,7 +25,22 @@ import asyncio
 import functools
 import inspect
 
-from . import utils
+from . import utils, security
+
+owner = security.owner
+sudo = security.sudo
+support = security.support
+group_owner = security.group_owner
+group_admin_add_admins = security.group_admin_add_admins
+group_admin_change_info = security.group_admin_change_info
+group_admin_ban_users = security.group_admin_ban_users
+group_admin_delete_messages = security.group_admin_delete_messages
+group_admin_pin_messages = security.group_admin_pin_messages
+group_admin_invite_users = security.group_admin_invite_users
+group_admin = security.group_admin
+group_member = security.group_member
+pm = security.pm
+unrestricted = security.unrestricted
 
 MODULES_NAME = "modules"
 

@@ -49,6 +49,7 @@ class PythonMod(loader.Module):
         self.client = client
         self.db = db
 
+    @loader.owner
     async def evalcmd(self, message):
         """.eval <expression>
            Evaluates python code"""
@@ -64,6 +65,7 @@ class PythonMod(loader.Module):
         ret = ret.format(utils.escape_html(utils.get_args_raw(message)), utils.escape_html(it))
         await utils.answer(message, ret)
 
+    @loader.owner
     async def execcmd(self, message):
         """.exec <expression>
            Executes python code"""
