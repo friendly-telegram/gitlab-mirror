@@ -50,9 +50,6 @@ else:
     web_available = True
 
 
-importlib.import_module(".modules", __package__)  # Required on 3.5 only
-
-
 class MemoryHandler(logging.Handler):
     """Keeps 2 buffers. One for dispatched messages. One for unused messages. When the length of the 2 together is 100
        truncate to make them 100 together, first trimming handled then unused."""
