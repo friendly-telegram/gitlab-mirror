@@ -19,6 +19,7 @@ import json
 
 from .backend import CloudBackend
 
+
 class LocalBackend():
     def __init__(self, client):
         self._client = client

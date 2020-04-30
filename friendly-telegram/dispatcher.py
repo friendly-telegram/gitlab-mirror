@@ -15,9 +15,8 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
-import shlex
 
-from . import utils
+from . import utils, main, security
 
 
 class CommandDispatcher:
@@ -25,35 +24,37 @@ class CommandDispatcher:
         self._modules = modules
         self._db = db
         self._bot = bot
+        self._security = security.SecurityManager(db, bot)
+
+    async def init(self, client):
+        await self._security.init(client)
 
     async def handle_command(self, event):
         """Handle all commands"""
         # Empty string evaluates to False, so the `or` activates
-        prefixes = self._db.get(__name__, "command_prefix", False) or ["."]
+        prefixes = self._db.get(main.__name__, "command_prefix", False) or ["."]
         if isinstance(prefixes, str):
             prefixes = [prefixes]  # legacy db migration
+            self._db.set(main.__name__, "command_prefix", prefixes)
         if not hasattr(event, "message") or getattr(event.message, "message", "") == "":
             return
         prefix = None
         for possible_prefix in prefixes:
-            if event.message.startswith(possible_prefix):
+            if event.message.message.startswith(possible_prefix):
                 prefix = possible_prefix
                 break
         if prefix is None:
             return
         logging.debug("Incoming command!")
-        if not event.message:
-            logging.debug("Ignoring command with no text.")
-            return
         if event.sticker:
             logging.debug("Ignoring invisible command (with sticker).")
         if event.via_bot_id:
             logging.debug("Ignoring inline bot.")
             return
         message = utils.censor(event.message)
-        blacklist_chats = self._db.get(__name__, "blacklist_chats", [])
-        whitelist_chats = self._db.get(__name__, "whitelist_chats", [])
-        whitelist_modules = self._db.get(__name__, "whitelist_modules", [])
+        blacklist_chats = self._db.get(main.__name__, "blacklist_chats", [])
+        whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
+        whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
         if utils.get_chat_id(message) in blacklist_chats or (whitelist_chats and utils.get_chat_id(message) not in
                                                              whitelist_chats) or message.from_id is None:
             logging.debug("Message is blacklisted")
@@ -67,16 +68,13 @@ class CommandDispatcher:
         message.message = message.message[len(prefix):]
         if not message.message:
             return  # Message is just the prefix
-        try:
-            shlex.split(message.message)  # TODO reconsider
-        except ValueError as e:
-            await message.edit("Invalid Syntax: " + str(e))
-            return
         command = message.message.split(maxsplit=1)[0]
         logging.debug(command)
         txt, func = self._modules.dispatch(command)
-        message.message = txt + message.message[len(command):]
         if func is not None:
+            if await self._security.check(message, func) is not True:
+                return
+            message.message = txt + message.message[len(command):]
             if str(utils.get_chat_id(message)) + "." + func.__self__.__module__ in blacklist_chats:
                 logging.debug("Command is blacklisted in chat")
                 return
@@ -89,10 +87,14 @@ class CommandDispatcher:
             except Exception as e:
                 logging.exception("Command failed")
                 try:
-                    await message.edit("<b>Request failed! Request was</b> <code>" + utils.escape_html(message.message)
-                                       + "</code><b>. Please report it in the support group "
-                                       "(</b><code>{0}support</code><b>) along with the logs "
-                                       "(</b><code>{0}logs error</code><b>)</b>".format(prefix))
+                    if await message.client.is_bot():
+                        await message.respond("<b>Sorry, something went wrong!</b>")
+                    else:
+                        await message.edit("<b>Request failed! Request was</b> <code>"
+                                           + utils.escape_html(message.message)
+                                           + "</code><b>. Please report it in the support group "
+                                           "(</b><code>{0}support</code><b>) along with the logs "
+                                           "(</b><code>{0}logs error</code><b>)</b>".format(prefix))
                 finally:
                     raise e
 
@@ -100,9 +102,9 @@ class CommandDispatcher:
         """Handle all incoming messages"""
         logging.debug("Incoming message!")
         message = utils.censor(event.message)
-        blacklist_chats = self._db.get(__name__, "blacklist_chats", [])
-        whitelist_chats = self._db.get(__name__, "whitelist_chats", [])
-        whitelist_modules = self._db.get(__name__, "whitelist_modules", [])
+        blacklist_chats = self._db.get(main.__name__, "blacklist_chats", [])
+        whitelist_chats = self._db.get(main.__name__, "whitelist_chats", [])
+        whitelist_modules = self._db.get(main.__name__, "whitelist_modules", [])
         if utils.get_chat_id(message) in blacklist_chats or (whitelist_chats and utils.get_chat_id(message) not in
                                                              whitelist_chats) or message.from_id is None:
             logging.debug("Message is blacklisted")

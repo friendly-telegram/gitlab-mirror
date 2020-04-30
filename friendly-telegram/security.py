@@ -1,0 +1,141 @@
+#    Friendly Telegram (telegram userbot)
+#    Copyright (C) 2018-2019 The Authors
+
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+import logging
+import telethon
+from telethon.tl.functions.channels import GetParticipantRequest
+
+logger = logging.getLogger(__name__)
+
+
+OWNER = 1 << 0
+SUDO = 1 << 1
+SUPPORT = 1 << 2
+GROUP_OWNER = 1 << 3
+GROUP_ADMIN_ADD_ADMINS = 1 << 4
+GROUP_ADMIN_CHANGE_INFO = 1 << 5
+GROUP_ADMIN_BAN_USERS = 1 << 6
+GROUP_ADMIN_DELETE_MESSAGES = 1 << 7
+GROUP_ADMIN_PIN_MESSAGES = 1 << 8
+GROUP_ADMIN_INVITE_USERS = 1 << 9
+GROUP_ADMIN = 1 << 10
+GROUP_MEMBER = 1 << 11
+PM = 1 << 12
+
+
+GROUP_ADMIN_ANY = (GROUP_ADMIN_ADD_ADMINS | GROUP_ADMIN_CHANGE_INFO | GROUP_ADMIN_BAN_USERS
+                   | GROUP_ADMIN_DELETE_MESSAGES | GROUP_ADMIN_PIN_MESSAGES | GROUP_ADMIN_INVITE_USERS | GROUP_ADMIN)
+
+
+DEFAULT_PERMISSIONS = (OWNER | SUDO)
+
+
+ALL = (1 << 13) - 1
+
+
+class SecurityManager:
+    def __init__(self, db, bot):
+        self._db = db
+        self._any_admin = db.get(__name__, "any_admin", False)
+        self._default = db.get(__name__, "default", DEFAULT_PERMISSIONS)
+        self._owner = db.get(__name__, "owner", None)
+        self._sudo = db.get(__name__, "sudo", [591929714])  # TODO remove myself from sudo!
+        self._support = db.get(__name__, "support", [])
+        self._bounding_mask = db.get(__name__, "bounding_mask", -1 if bot else DEFAULT_PERMISSIONS)
+
+    async def init(self, client):
+        if self._owner is None:
+            self._owner = (await client.get_me(True)).user_id
+
+    async def check(self, message, func):
+        config = getattr(func, "security", self._default)
+        if config & ~ALL:
+            logger.error("Security config contains unknown bits")
+            return False
+        config &= self._bounding_mask
+        logger.debug("Checking security match for %d", config)
+
+        f_owner = config & OWNER
+        f_sudo = config & SUDO
+        f_support = config & SUPPORT
+        f_group_owner = config & GROUP_OWNER
+        f_group_admin_add_admins = config & GROUP_ADMIN_ADD_ADMINS
+        f_group_admin_change_info = config & GROUP_ADMIN_CHANGE_INFO
+        f_group_admin_ban_users = config & GROUP_ADMIN_BAN_USERS
+        f_group_admin_delete_messages = config & GROUP_ADMIN_DELETE_MESSAGES
+        f_group_admin_pin_messages = config & GROUP_ADMIN_PIN_MESSAGES
+        f_group_admin_invite_users = config & GROUP_ADMIN_INVITE_USERS
+        f_group_admin = config & GROUP_ADMIN
+        f_group_member = config & GROUP_MEMBER
+        f_pm = config & PM
+
+        f_group_admin_any = (f_group_admin_add_admins or f_group_admin_change_info or f_group_admin_ban_users
+                             or f_group_admin_delete_messages or f_group_admin_pin_messages
+                             or f_group_admin_invite_users or f_group_admin)
+
+        if f_owner and message.from_id == self._owner:
+            return True
+        if f_sudo and message.from_id in self._sudo:
+            return True
+        if f_support and message.from_id in self._support:
+            return True
+
+        if f_pm and message.is_private:
+            return True
+
+        if f_group_member and message.is_group:
+            return True
+
+        if f_group_admin_any or f_group_owner:
+            if message.is_channel and message.is_group:
+                participant = await message.client(GetParticipantRequest(await message.get_input_chat(),
+                                                                         await message.get_input_sender()))
+                if isinstance(participant, telethon.types.ChannelParticipantCreator):
+                    return True
+                if isinstance(participant, telethon.types.ChannelParticipantAdmin):
+                    if self._any_admin and f_group_admin_any:
+                        return True
+                    rights = participant.admin_rights
+                    if f_group_admin:
+                        return True
+                    if f_group_admin_add_admins and rights.add_admins:
+                        return True
+                    if f_group_admin_change_info and rights.change_info:
+                        return True
+                    if f_group_admin_ban_users and rights.ban_users:
+                        return True
+                    if f_group_admin_delete_messages and rights.delete_messages:
+                        return True
+                    if f_group_admin_pin_messages and rights.pin_messages:
+                        return True
+                    if f_group_admin_invite_users and rights.invite_users:
+                        return True
+            elif message.is_group:
+                full_chat = await message.client(telethon.functions.messages.GetFullChatRequest(message.chat_id))
+                participants = full_chat.full_chat.participants.participants
+                participant = None
+                for possible_participant in participants:
+                    if possible_participant.user_id == message.from_id:
+                        participant = possible_participant
+                        break
+                if not participant:
+                    return
+                if isinstance(participant, telethon.types.ChatParticipantCreator):
+                    return True
+                if isinstance(participant, telethon.types.ChatParticipantAdmin):
+                    if f_group_admin_any:
+                        return True
+            return False

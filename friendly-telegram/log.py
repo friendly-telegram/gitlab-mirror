@@ -41,10 +41,11 @@ class MemoryHandler(logging.Handler):
                 self.release()
 
 
-_formatter = logging.Formatter(logging.BASIC_FORMAT, "")  # pylint: disable=C0103
-_handler = logging.StreamHandler()  # pylint: disable=C0103
-_handler.setFormatter(_formatter)
-logging.getLogger().handlers = []
-logging.getLogger().addHandler(MemoryHandler(_handler, 500))
-logging.getLogger().setLevel(0)
-logging.captureWarnings(True)
+def init():
+    formatter = logging.Formatter(logging.BASIC_FORMAT, "")
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logging.getLogger().handlers = []
+    logging.getLogger().addHandler(MemoryHandler(handler, 500))
+    logging.getLogger().setLevel(0)
+    logging.captureWarnings(True)

@@ -34,7 +34,7 @@ from telethon.sessions import StringSession, SQLiteSession
 from telethon.errors.rpcerrorlist import PhoneNumberInvalidError, MessageNotModifiedError, ApiIdInvalidError
 from telethon.tl.functions.channels import DeleteChannelRequest
 
-from . import logger, utils, loader, heroku
+from . import utils, loader, heroku
 from .dispatcher import CommandDispatcher
 
 
@@ -346,9 +346,10 @@ async def amain(client, allclients, web, arguments):
             return  # We are done
         if not web_only:
             dispatcher = CommandDispatcher(modules, db, await client.is_bot())
+            await dispatcher.init(client)
             client.add_event_handler(dispatcher.handle_incoming,
                                      events.NewMessage(incoming=True))
             client.add_event_handler(dispatcher.handle_command,
-                                     events.NewMessage(outgoing=True, forwards=False))
+                                     events.NewMessage(forwards=False))
         print("Started for " + str((await client.get_me(True)).user_id))  # noqa: T001
         await client.run_until_disconnected()

@@ -48,7 +48,7 @@ class TestMod(loader.Module):
 
     async def pingcmd(self, message):
         """Does nothing"""
-        await message.edit(self.strings["pong"])
+        await utils.answer(message, self.strings["pong"])
 
     async def dumpcmd(self, message):
         """Use in reply to get a dump of a message"""
@@ -62,7 +62,7 @@ class TestMod(loader.Module):
            Dumps logs. Loglevels below WARNING may contain personal info."""
         args = utils.get_args(message)
         if not len(args) == 1:
-            await message.edit(self.strings["set_loglevel"])
+            await utils.answer(message, self.strings["set_loglevel"])
             return
         try:
             lvl = int(args[0])
@@ -70,13 +70,13 @@ class TestMod(loader.Module):
             # It's not an int. Maybe it's a loglevel
             lvl = getattr(logging, args[0].upper(), None)
         if lvl is None:
-            await message.edit(self.strings["bad_loglevel"])
+            await utils.answer(message, self.strings["bad_loglevel"])
             return
-        await message.edit(self.strings["uploading_logs"])
+        await utils.answer(message, self.strings["uploading_logs"])
         [handler] = logging.getLogger().handlers
         logs = ("\n".join(handler.dumps(lvl))).encode("utf-8")
         if not len(logs) > 0:
-            await message.edit(self.strings["no_logs"].format(lvl))
+            await utils.answer(message, self.strings["no_logs"].format(lvl))
             return
         logs = BytesIO(logs)
         logs.name = self.strings["logs_filename"]
@@ -91,7 +91,7 @@ class TestMod(loader.Module):
         try:
             time.sleep(int(utils.get_args_raw(message)))
         except ValueError:
-            await message.edit(self.strings["suspend_invalid_time"])
+            await utils.answer(message, self.strings["suspend_invalid_time"])
 
     async def client_ready(self, client, db):
         self.client = client
