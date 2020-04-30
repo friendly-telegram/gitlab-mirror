@@ -26,7 +26,6 @@ import collections
 import sqlite3
 import importlib
 import signal
-import shlex
 import time
 import requests
 
@@ -36,6 +35,7 @@ from telethon.errors.rpcerrorlist import PhoneNumberInvalidError, MessageNotModi
 from telethon.tl.functions.channels import DeleteChannelRequest
 
 from . import utils, loader, heroku
+from .dispatcher import CommandDispatcher
 
 
 from .database import backend, local_backend, frontend
@@ -100,91 +100,6 @@ logging.getLogger().handlers = []
 logging.getLogger().addHandler(MemoryHandler(_handler, 500))
 logging.getLogger().setLevel(0)
 logging.captureWarnings(True)
-
-
-async def handle_command(modules, db, event):
-    """Handle all commands"""
-    prefix = db.get(__name__, "command_prefix", False) or "."  # Empty string evaluates to False, so the `or` activates
-    if not hasattr(event, "message") or getattr(event.message, "message", "") == "":
-        return
-    if event.message.message[0:len(prefix)] != prefix:
-        return
-    logging.debug("Incoming command!")
-    if not event.message:
-        logging.debug("Ignoring command with no text.")
-        return
-    if event.via_bot_id:
-        logging.debug("Ignoring inline bot.")
-        return
-    message = utils.censor(event.message)
-    blacklist_chats = db.get(__name__, "blacklist_chats", [])
-    whitelist_chats = db.get(__name__, "whitelist_chats", [])
-    whitelist_modules = db.get(__name__, "whitelist_modules", [])
-    if utils.get_chat_id(message) in blacklist_chats or (whitelist_chats and utils.get_chat_id(message) not in
-                                                         whitelist_chats) or message.from_id is None:
-        logging.debug("Message is blacklisted")
-        return
-    if len(message.message) > len(prefix) and message.message[:len(prefix) * 2] == prefix * 2 \
-            and message.message != len(message.message) // len(prefix) * prefix:
-        # Allow escaping commands using .'s
-        await message.edit(utils.escape_html(message.message[len(prefix):]))
-    logging.debug(message)
-    # Make sure we don't get confused about spaces or other shit in the prefix
-    message.message = message.message[len(prefix):]
-    try:
-        shlex.split(message.message)
-    except ValueError as e:
-        await message.edit("Invalid Syntax: " + str(e))
-        return
-    if not message.message:
-        return  # Message is just the prefix
-    command = message.message.split(maxsplit=1)[0]
-    logging.debug(command)
-    txt, func = modules.dispatch(command)
-    message.message = txt + message.message[len(command):]
-    if func is not None:
-        if str(utils.get_chat_id(message)) + "." + func.__self__.__module__ in blacklist_chats:
-            logging.debug("Command is blacklisted in chat")
-            return
-        if whitelist_modules and not (str(utils.get_chat_id(message)) + "."
-                                      + func.__self__.__module__ in whitelist_modules):
-            logging.debug("Command is not whitelisted in chat")
-            return
-        try:
-            await func(message)
-        except Exception as e:
-            logging.exception("Command failed")
-            try:
-                await message.edit("<b>Request failed! Request was</b> <code>" + utils.escape_html(message.message)
-                                   + "</code><b>. Please report it in the support group (</b><code>{0}support</code>"
-                                   "<b>) along with the logs (</b><code>{0}logs error</code><b>)</b>".format(prefix))
-            finally:
-                raise e
-
-
-async def handle_incoming(modules, db, event):
-    """Handle all incoming messages"""
-    logging.debug("Incoming message!")
-    message = utils.censor(event.message)
-    blacklist_chats = db.get(__name__, "blacklist_chats", [])
-    whitelist_chats = db.get(__name__, "whitelist_chats", [])
-    whitelist_modules = db.get(__name__, "whitelist_modules", [])
-    if utils.get_chat_id(message) in blacklist_chats or (whitelist_chats and utils.get_chat_id(message) not in
-                                                         whitelist_chats) or message.from_id is None:
-        logging.debug("Message is blacklisted")
-        return
-    for func in modules.watchers:
-        if str(utils.get_chat_id(message)) + "." + func.__self__.__module__ in blacklist_chats:
-            logging.debug("Command is blacklisted in chat")
-            return
-        if whitelist_modules and not (str(utils.get_chat_id(message)) + "."
-                                      + func.__self__.__module__ in whitelist_modules):
-            logging.debug("Command is not whitelisted in chat")
-            return
-        try:
-            await func(message)
-        except Exception:
-            logging.exception("Error running watcher")
 
 
 def run_config(db, phone=None, modules=None):
@@ -482,9 +397,10 @@ async def amain(client, allclients, web, arguments):
             # Loader has installed all dependencies
             return  # We are done
         if not web_only:
-            client.add_event_handler(functools.partial(handle_incoming, modules, db),
+            dispatcher = CommandDispatcher(modules, db, await client.is_bot())
+            client.add_event_handler(dispatcher.handle_incoming,
                                      events.NewMessage(incoming=True))
-            client.add_event_handler(functools.partial(handle_command, modules, db),
+            client.add_event_handler(dispatcher.handle_command,
                                      events.NewMessage(outgoing=True, forwards=False))
         print("Started for " + str((await client.get_me(True)).user_id))  # noqa: T001
         await client.run_until_disconnected()
