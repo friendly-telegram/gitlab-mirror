@@ -25,6 +25,7 @@ class CommandDispatcher:
         self._db = db
         self._bot = bot
         self._security = security.SecurityManager(db, bot)
+        self.check_security = self._security.check
 
     async def init(self, client):
         await self._security.init(client)
@@ -72,9 +73,9 @@ class CommandDispatcher:
             return  # Message is just the prefix
         command = message.message.split(maxsplit=1)[0]
         tag = command.split("@", maxsplit=1)
-        if (len(tag) == 2 and tag[1].lower() != self._cached_username) or (message.from_id != self._me and not
-                                                                           (tag[1].lower() == self._cached_username
-                                                                            and len(tag) == 2)):
+        if ((len(tag) == 2 and tag[1].lower() != self._cached_username)
+            or ((message.from_id != self._me and not message.is_private)
+                and not (len(tag) == 2 and tag[1].lower() == self._cached_username))):
             return  # Targetted at someone else
         logging.debug(tag[0])
         txt, func = self._modules.dispatch(tag[0])

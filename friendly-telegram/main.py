@@ -249,9 +249,9 @@ def main():  # noqa: C901
             session = StringSession()
         else:
             session = os.path.join(os.path.dirname(utils.get_base_dir()),
-                                   "friendly-telegram" + (("-" + phone) if phone else ""))
+                                   "friendly-telegram" + (("-" + phone.split(":", maxsplit=1)[0]) if phone else ""))
         try:
-            client = TelegramClient(session, api_token.ID, api_token.HASH, connection_retries=None).start(phone)
+            client = TelegramClient(session, api_token.ID, api_token.HASH, connection_retries=None)
             if ":" in phone:
                 client.start(bot_token=phone)
                 client.phone = None
@@ -341,6 +341,7 @@ async def amain(client, allclients, web, arguments):
         babelfish = Translator(db.get(__name__, "langpacks", []), db.get(__name__, "language", ["en"]))
         await babelfish.init(client)
 
+
         modules = loader.Modules()
 
         if web and not arguments.heroku_deps_internal:
@@ -357,6 +358,7 @@ async def amain(client, allclients, web, arguments):
         if not web_only:
             dispatcher = CommandDispatcher(modules, db, await client.is_bot())
             await dispatcher.init(client)
+            modules.check_security = dispatcher.check_security
             client.add_event_handler(dispatcher.handle_incoming,
                                      events.NewMessage(incoming=True))
             client.add_event_handler(dispatcher.handle_command,
