@@ -222,7 +222,7 @@ def main():  # noqa: C901
                 client.session = session
         else:
             try:
-                phones = [input("Please enter your phone: ")]
+                phones = [input("Please enter your phone or bot token: ")]
             except EOFError:
                 print()  # noqa: T001
                 print("=" * 30)  # noqa: T001
@@ -245,11 +245,21 @@ def main():  # noqa: C901
                 print("Goodbye.")  # noqa: T001
                 sys.exit(1)
     for phone in phones:
+        if arguments.heroku:
+            session = StringSession()
+        else:
+            session = os.path.join(os.path.dirname(utils.get_base_dir()),
+                                   "friendly-telegram" + (("-" + phone) if phone else ""))
         try:
-            clients += [TelegramClient(StringSession() if arguments.heroku else
-                                       os.path.join(os.path.dirname(utils.get_base_dir()), "friendly-telegram"
-                                                    + (("-" + phone) if phone else "")), api_token.ID,
-                                       api_token.HASH, connection_retries=None).start(phone)]
+            client = TelegramClient(session, api_token.ID, api_token.HASH, connection_retries=None).start(phone)
+            if ":" in phone:
+                client.start(bot_token=phone)
+                client.phone = None
+                del phone
+            else:
+                client.start(phone)
+                client.phone = phone
+            clients.append(client)
         except sqlite3.OperationalError as ex:
             print("Error initialising phone " + (phone if phone else "unknown") + " " + ",".join(ex.args)  # noqa: T001
                   + ": this is probably your fault. Try checking that this is the only instance running and "
@@ -264,7 +274,7 @@ def main():  # noqa: C901
             print("Please check the phone number. Use international format (+XX...)"  # noqa: T001
                   " and don't put spaces in it.")
             continue
-        clients[-1].phone = phone  # so we can format stuff nicer in configurator
+    del phones
 
     if arguments.heroku:
         if isinstance(arguments.heroku, str):

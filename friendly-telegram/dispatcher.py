@@ -29,7 +29,7 @@ class CommandDispatcher:
     async def init(self, client):
         await self._security.init(client)
         self._me = (await client.get_me(True)).user_id
-        self._cached_username = (await client.get_me()).username
+        self._cached_username = (await client.get_me()).username.lower()
 
     async def handle_command(self, event):
         """Handle all commands"""
@@ -72,12 +72,13 @@ class CommandDispatcher:
             return  # Message is just the prefix
         command = message.message.split(maxsplit=1)[0]
         tag = command.split("@", maxsplit=1)
-        if (len(tag) == 2 and tag[1] != self._cached_username) or (message.from_id != self._me and not
+        if (len(tag) == 2 and tag[1].lower() != self._cached_username) or (message.from_id != self._me and not
                                                                    (len(tag) == 2
-                                                                    and tag[1] == self._cached_username)):
+                                                                    and tag[1].lower() == self._cached_username)):
+            print(tag, self._cached_username)
             return  # Targetted at someone else
-        logging.debug(command)
-        txt, func = self._modules.dispatch(command)
+        logging.debug(tag[0])
+        txt, func = self._modules.dispatch(tag[0])
         if func is not None:
             if await self._security.check(message, func) is not True:
                 return
