@@ -73,9 +73,8 @@ class CommandDispatcher:
         command = message.message.split(maxsplit=1)[0]
         tag = command.split("@", maxsplit=1)
         if (len(tag) == 2 and tag[1].lower() != self._cached_username) or (message.from_id != self._me and not
-                                                                   (len(tag) == 2
-                                                                    and tag[1].lower() == self._cached_username)):
-            print(tag, self._cached_username)
+                                                                           (tag[1].lower() == self._cached_username
+                                                                            and len(tag) == 2)):
             return  # Targetted at someone else
         logging.debug(tag[0])
         txt, func = self._modules.dispatch(tag[0])
