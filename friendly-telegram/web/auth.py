@@ -18,9 +18,12 @@ import asyncio
 from aiohttp import web
 import aiohttp_jinja2
 import hashlib
+import os
 import secrets
 
 from base64 import b64encode
+
+from .. import security
 
 
 class Web:
@@ -45,14 +48,14 @@ class Web:
             return web.Response()
         code = secrets.randbelow(100000)
         asyncio.ensure_future(asyncio.shield(self._clear_code(uid)))
+        salt = b64encode(os.urandom(16))
         self._uid_to_code[uid] = b64encode(hashlib.scrypt((str(code).zfill(5) + str(uid)).encode("utf-8"),
-                                                          salt="friendlytgbot".encode("utf-8"),
-                                                          n=16384, r=8, p=1, dklen=64)).decode("utf-8")
-        await self.client_data[uid][1].send_message("me", "Your code is <code>{:05d}</code>\nDo <b>not</b> "
-                                                          "share this code with anyone, even is they say they are"
-                                                          " from friendly-telegram.\nThe code will expire in "
-                                                          "2 minutes.".format(code))
-        return web.Response()
+                                                          salt=salt, n=16384, r=8, p=1, dklen=64)).decode("utf-8")
+        await self.client_data[uid][1].send_message(self.client_data[uid][2].get(security.__name__, "owner", "me"),
+                                                    "Your code is <code>{:05d}</code>\nDo <b>not</b> "
+                                                    "share this code with anyone!\nThe code will expire in "
+                                                    "2 minutes.".format(code))
+        return web.Response(body=salt)
 
     async def _clear_code(self, uid):
         await asyncio.sleep(120)  # Codes last 2 minutes, or whenever they are used
