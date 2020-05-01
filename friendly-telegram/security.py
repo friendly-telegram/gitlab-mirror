@@ -114,7 +114,7 @@ class SecurityManager:
         self._any_admin = db.get(__name__, "any_admin", False)
         self._default = db.get(__name__, "default", DEFAULT_PERMISSIONS)
         self._owner = db.get(__name__, "owner", None)
-        self._sudo = db.get(__name__, "sudo", [591929714])  # TODO remove myself from sudo!
+        self._sudo = db.get(__name__, "sudo", [])
         self._support = db.get(__name__, "support", [])
         self._bounding_mask = db.get(__name__, "bounding_mask", -1 if bot else DEFAULT_PERMISSIONS)
 
