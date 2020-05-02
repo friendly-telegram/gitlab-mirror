@@ -36,6 +36,21 @@ GROUP_MEMBER = 1 << 11
 PM = 1 << 12
 
 
+BITMAP = {"OWNER": OWNER,
+          "SUDO": SUDO,
+          "SUPPORT": SUPPORT,
+          "GROUP_OWNER": GROUP_OWNER,
+          "GROUP_ADMIN_ADD_ADMINS": GROUP_ADMIN_ADD_ADMINS,
+          "GROUP_ADMIN_CHANGE_INFO": GROUP_ADMIN_CHANGE_INFO,
+          "GROUP_ADMIN_BAN_USERS": GROUP_ADMIN_BAN_USERS,
+          "GROUP_ADMIN_DELETE_MESSAGES": GROUP_ADMIN_DELETE_MESSAGES,
+          "GROUP_ADMIN_PIN_MESSAGES": GROUP_ADMIN_PIN_MESSAGES,
+          "GROUP_ADMIN_INVITE_USERS": GROUP_ADMIN_INVITE_USERS,
+          "GROUP_ADMIN": GROUP_ADMIN,
+          "GROUP_MEMBER": GROUP_MEMBER,
+          "PM": PM}
+
+
 GROUP_ADMIN_ANY = (GROUP_ADMIN_ADD_ADMINS | GROUP_ADMIN_CHANGE_INFO | GROUP_ADMIN_BAN_USERS
                    | GROUP_ADMIN_DELETE_MESSAGES | GROUP_ADMIN_PIN_MESSAGES | GROUP_ADMIN_INVITE_USERS | GROUP_ADMIN)
 
@@ -110,20 +125,22 @@ def _sec(func, flags):
 
 class SecurityManager:
     def __init__(self, db, bot):
-        self._db = db
+        # We read the db during init to prevent people manipulating it at runtime
+        # TODO in the future this will be backed up by blocking the inspect module at runtime and blocking __setattr__
         self._any_admin = db.get(__name__, "any_admin", False)
         self._default = db.get(__name__, "default", DEFAULT_PERMISSIONS)
         self._owner = db.get(__name__, "owner", None)
         self._sudo = db.get(__name__, "sudo", [])
         self._support = db.get(__name__, "support", [])
         self._bounding_mask = db.get(__name__, "bounding_mask", -1 if bot else DEFAULT_PERMISSIONS)
+        self._perms = db.get(__name__, "masks", {})
 
     async def init(self, client):
         if self._owner is None:
             self._owner = (await client.get_me(True)).user_id
 
     async def check(self, message, func):
-        config = getattr(func, "security", self._default)
+        config = self._perms.get(func.__module__ + "." + func.__name__, getattr(func, "security", self._default))
         if config & ~ALL:
             logger.error("Security config contains unknown bits")
             return False

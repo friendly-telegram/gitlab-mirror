@@ -1,0 +1,83 @@
+<!--
+    Friendly Telegram (telegram userbot)
+    Copyright (C) 2018-2019 The Authors
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+{% set ns = namespace(module_number=0) %}
+{% set ns2 = namespace(module_number=0) %}
+
+{% extends "base.jinja2" %}
+
+{% block head %}
+  <script src="{{ static('settings.js') }}"></script>
+{% endblock %}
+
+{% block title %}
+  Friendly-Telegram
+{% endblock %}
+
+{% block content %}
+  <div class="mdl-card__title">
+    <h3 class="mdl-card__title-text">Welcome to the Friendly-Telegram web interface</h3>
+  </div>
+  <div class="mdl-card__supporting-text">
+    Here you can configure various features of Friendly-Telegram, as well as access debugging tools and status reports
+    <br><br>
+    You are currently managing permissions
+    {% for module in modules %}
+      {% set ns.module_number = ns.module_number + 1 %}
+      {% if module.commands %}
+        <br>
+        <a href="#module_{{ ns.module_number }}">{{ module.name }}</a>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endblock %}
+
+{% block after %}
+  <br>
+  <div class="mdl-card mdl-shadow--2dp padded" style="width:100%;">
+    <div class="mdl-card__title">
+      <h3 class="mdl-card__title-text">Permissions</h3>
+    </div>
+    <div class="mdl-card__supporting-text">
+      <p>You can customise which permission sets are enabled and who is in them below</p>
+      {% include 'permission_setting.jinja2' %}
+    </div>
+  </div>
+
+
+  {% for module in modules %}
+    {% set ns2.module_number = ns2.module_number + 1 %}
+    {% if module.commands %}
+      <br>
+      <div class="mdl-card mdl-shadow--2dp padded" style="width: 100%;" id="module_{{ ns2.module_number }}">
+        <div class="mdl-card__title">
+          <h4 class="mdl-card__title-text">{{ module.name }}</h4>
+        </div>
+        <div class="mdl-cad__supporting-text" style="width:100%;">
+          <p>{{ module|getdoc }}</p>
+          {% for command_name, command in module.commands.items() %}
+            <br>
+            <h5 style="font-weight: 300;">{{ command_name }}</h5>
+            {% include 'permission_setting.jinja2' %}
+            <br>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  {% endfor %}
+{% endblock %}
