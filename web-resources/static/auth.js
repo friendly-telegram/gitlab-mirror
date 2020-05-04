@@ -23,9 +23,9 @@ function beginAuthFlow(uid) {
     if (!response.ok) {
       sendCodeFailed();
     } else {
-      response.json().then(function(resp) {
-        salt = resp.salt;
-        sendCodeSuccess(uid, resp.msg_id);
+      response.text().then(function(resp) {
+        salt = resp;
+        sendCodeSuccess(uid);
       });
     }
   })
@@ -42,10 +42,9 @@ function sendCodeFailed() {
       timeout: 2000});
 }
 
-function sendCodeSuccess(uid, msgId) {
+function sendCodeSuccess(uid) {
   'use strict';
   window.selectedUid = uid;
-  document.getElementById("savedmsgslink").href = "https://t.me/c/" + uid + "/" + msgId;
   document.getElementById("codeentry").showModal();
 }
 
