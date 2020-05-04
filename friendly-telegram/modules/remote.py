@@ -55,6 +55,7 @@ class RemoteMod(loader.Module):
     def config_complete(self):
         self.name = self.strings["name"]
 
+    @loader.owner
     async def remotecmd(self, message):
         """Execute remote command"""
         # Validation

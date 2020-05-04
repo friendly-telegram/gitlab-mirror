@@ -140,7 +140,10 @@ class SecurityManager:
             self._owner = (await client.get_me(True)).user_id
 
     async def check(self, message, func):
-        config = self._perms.get(func.__module__ + "." + func.__name__, getattr(func, "security", self._default))
+        if isinstance(func, int):
+            config = self._perms.get(func.__module__ + "." + func.__name__, getattr(func, "security", self._default))
+        else:
+            config = func
         if config & ~ALL:
             logger.error("Security config contains unknown bits")
             return False

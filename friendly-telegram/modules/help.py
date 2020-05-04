@@ -45,7 +45,8 @@ class HelpMod(loader.Module):
                "cmd_tmpl": ", {}",
                "footer": ("\n\nYou can <b>read more</b> about most commands "
                           "<a href='https://friendly-telegram.gitlab.io'>here</a>"),
-               "joined": "<b>Joined to</b> <a href='https://t.me/friendlytgbot'>support chat</a>"}
+               "joined": "<b>Joined to</b> <a href='https://t.me/friendlytgbot'>support chat</a>",
+               "join": "<b>Join the</b> <a href='https://t.me/friendlytgbot'>support chat</a>"}
 
     def config_complete(self):
         self.name = self.strings["name"]
@@ -98,9 +99,13 @@ class HelpMod(loader.Module):
 
     async def supportcmd(self, message):
         """Joins the support chat"""
-        await self.client(JoinChannelRequest("https://t.me/friendlytgbot"))
-        await utils.answer(message, self.strings["joined"])
+        if not self.is_bot and self.loader.check_security(message, loader.OWNER | loader.SUDO):
+            await self.client(JoinChannelRequest("https://t.me/friendlytgbot"))
+            await utils.answer(message, self.strings["joined"])
+        else:
+            await utils.answer(message, self.strings["join"])
 
     async def client_ready(self, client, db):
         self.client = client
+        self.is_bot = await client.is_bot()
         self.db = db

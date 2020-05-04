@@ -119,6 +119,7 @@ class LoaderMod(loader.Module):
     def config_complete(self):
         self.name = self.strings["name"]
 
+    @loader.owner
     async def dlmodcmd(self, message):
         """Downloads and installs a module from the official module repo"""
         args = utils.get_args(message)
@@ -130,6 +131,7 @@ class LoaderMod(loader.Module):
             text = utils.escape_html("\n".join(await self.get_repo_list("full")))
             await utils.answer(message, "<b>" + self.strings["avail_header"] + "</b>\n<code>" + text + "</code>")
 
+    @loader.owner
     async def dlpresetcmd(self, message):
         """Set preset. Defaults to full"""
         args = utils.get_args(message)
@@ -175,6 +177,7 @@ class LoaderMod(loader.Module):
         r.raise_for_status()
         return await self.load_module(r.content.decode("utf-8"), message, module_name, url)
 
+    @loader.owner
     async def loadmodcmd(self, message):
         """Loads the module file"""
         if message.file:
@@ -278,6 +281,7 @@ class LoaderMod(loader.Module):
         self.allmodules.send_config_one(instance, self._db, self.babel)
         self._pending_setup.append(self.allmodules.send_ready_one(instance, self._client, self._db, self.allclients))
 
+    @loader.owner
     async def unloadmodcmd(self, message):
         """Unload module by class name"""
         args = utils.get_args(message)

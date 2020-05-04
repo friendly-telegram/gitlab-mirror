@@ -37,6 +37,7 @@ class NoCollisionsMod(loader.Module):
     def config_complete(self):
         self.name = self.strings["name"]
 
+    @loader.owner
     async def cleanbotscmd(self, message):
         """Kills all userbots except 1, selected according to which is fastest (approx)"""
         try:
