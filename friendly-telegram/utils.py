@@ -166,6 +166,7 @@ async def answer(message, response, **kwargs):
     """Use this to give the response to a command"""
     if await message.client.is_bot() and len(response) > 4096:
         kwargs.setdefault("asfile", True)
+    kwargs.setdefault("link_preview", False)
     cont_msg = "[continued]\n"
     ret = [message]
     edit = message.from_id == (await message.client.get_me(True)).user_id
