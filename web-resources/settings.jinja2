@@ -37,6 +37,7 @@
     Here you can configure various features of Friendly-Telegram, as well as access debugging tools and status reports
     <br><br>
     You are currently managing permissions
+    <p><strong>You must restart after changing any of these settings or they will not take effect</strong></p>
     {% for module in modules %}
       {% set ns.module_number = ns.module_number + 1 %}
       {% if module.commands %}
@@ -55,6 +56,7 @@
     </div>
     <div class="mdl-card__supporting-text">
       <p>You can customise which permission sets are enabled and who is in them below</p>
+      <p><strong>If a switch is disabled here, it is disabled universally for all commands</strong></p>
       {% include 'permission_setting.jinja2' %}
     </div>
   </div>
