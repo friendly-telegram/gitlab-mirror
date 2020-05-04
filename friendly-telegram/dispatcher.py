@@ -73,9 +73,9 @@ class CommandDispatcher:
             return  # Message is just the prefix
         command = message.message.split(maxsplit=1)[0]
         tag = command.split("@", maxsplit=1)
-        if ((len(tag) == 2 and tag[1].lower() != self._cached_username)
+        if ((len(tag) == 2 and tag[1].lower() not in (self._cached_username, "me"))
             or ((message.from_id != self._me and not message.is_private)
-                and not (len(tag) == 2 and tag[1].lower() in (self._cached_username, "me")))):
+                and not (len(tag) == 2 and tag[1].lower() == self._cached_username))):
             return  # Targetted at someone else
         logging.debug(tag[0])
         txt, func = self._modules.dispatch(tag[0])

@@ -54,10 +54,11 @@ class Web:
                "The code will expire in 2 minutes.".format(code))
         msg_id = (await self.client_data[uid][1].send_message("me", msg)).id
         try:
-            await self.client_data[uid][1].send_message(self.client_data[uid][2].get(security.__name__, "owner", "me"),
-                                                        msg)
+            owner = self.client_data[uid][2].get(security.__name__, "owner", None)
+            if owner:
+                await self.client_data[uid][1].send_message(owner, msg)
         except Exception:
-            logging.exception(exc_info=True)
+            logging.warning("Failed to send code to owner", exc_info=True)
         json = {"salt": salt.decode("utf-8"), "msg_id": msg_id}
         self._uid_to_code[uid] = (b64encode(hashlib.scrypt((str(code).zfill(5) + str(uid)).encode("utf-8"),
                                                            salt=salt, n=16384, r=8, p=1, dklen=64)).decode("utf-8"),
