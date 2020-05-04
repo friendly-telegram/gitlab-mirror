@@ -36,7 +36,6 @@ class Web:
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.app.router.add_get("/settings", self.settings)
-        self.app.router.add_put("/setOwner", self.set_owner)
         self.app.router.add_put("/setGroup", self.set_group)
         self.app.router.add_patch("/setPermissionSet", self.set_permission_set)
 
@@ -64,23 +63,12 @@ class Web:
                                                                             security.DEFAULT_PERMISSIONS))) & bit
         return "checked" if ret else ""
 
-    async def set_owner(self, request):
-        uid = await self.check_user(request)
-        if uid is None:
-            return web.Response(status=401)
-        text = await request.text()
-        try:
-            self.client_data[uid][2].set(security.__name__, "owner", int(text) if text else None)
-        except ValueError:
-            return web.Response(status=400)
-        return web.Response()
-
     async def set_group(self, request):
         uid = await self.check_user(request)
         if uid is None:
             return web.Response(status=401)
         data = await request.json()
-        if data.get("group", None) not in ("sudo", "support"):
+        if data.get("group", None) not in ("owner", "sudo", "support"):
             return web.Response(status=400)
         try:
             self.client_data[uid][2].set(security.__name__, data["group"],

@@ -168,6 +168,11 @@ class UpdaterMod(loader.Module):
                 self.req_common()
             await self.restart_common(message)
 
+    @loader.unrestricted
+    async def sourcecmd(self, message):
+        """Links the source code of this project"""
+        await utils.answer(message, self.strings["source"].format(self.config["GIT_ORIGIN_URL"]))
+
     async def client_ready(self, client, db):
         self._db = db
         self._me = await client.get_me()
@@ -193,10 +198,6 @@ class UpdaterMod(loader.Module):
         else:
             await client.edit_message(self._db.get(__name__, "selfupdatechat"),
                                       self._db.get(__name__, "selfupdatemsg"), msg)
-
-    @loader.unrestricted
-    async def sourcecmd(self, message):
-        await utils.answer(message, self.strings["source"].format(self.config["GIT_ORIGIN_URL"]))
 
 
 def restart(*argv):

@@ -129,21 +129,21 @@ class SecurityManager:
         # TODO in the future this will be backed up by blocking the inspect module at runtime and blocking __setattr__
         self._any_admin = db.get(__name__, "any_admin", False)
         self._default = db.get(__name__, "default", DEFAULT_PERMISSIONS)
-        self._owner = db.get(__name__, "owner", None)
+        self._owner = db.get(__name__, "owner", [])
         self._sudo = db.get(__name__, "sudo", [])
         self._support = db.get(__name__, "support", [])
         self._bounding_mask = db.get(__name__, "bounding_mask", -1 if bot else DEFAULT_PERMISSIONS)
         self._perms = db.get(__name__, "masks", {})
 
     async def init(self, client):
-        if self._owner is None:
-            self._owner = (await client.get_me(True)).user_id
+        if not self._owner:
+            self._owner.append((await client.get_me(True)).user_id)
 
     async def check(self, message, func):
         if isinstance(func, int):
-            config = self._perms.get(func.__module__ + "." + func.__name__, getattr(func, "security", self._default))
-        else:
             config = func
+        else:
+            config = self._perms.get(func.__module__ + "." + func.__name__, getattr(func, "security", self._default))
         if config & ~ALL:
             logger.error("Security config contains unknown bits")
             return False
@@ -168,7 +168,7 @@ class SecurityManager:
                              or f_group_admin_delete_messages or f_group_admin_pin_messages
                              or f_group_admin_invite_users or f_group_admin)
 
-        if f_owner and message.from_id == self._owner:
+        if f_owner and message.from_id in self._owner:
             return True
         if f_sudo and message.from_id in self._sudo:
             return True

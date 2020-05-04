@@ -33,23 +33,6 @@ function updatePermissionSwitch(elem) {
   });
 }
 
-function setOwner(elem) {
-  'use strict';
-  fetch("/setOwner", {method: "PUT", body: elem.value, credentials: "include"})
-  .then(function(response) {
-    if (!response.ok) {
-      console.log(response);
-      setConfigFailed(elem);
-    } else {
-      setConfigDone(elem);
-    }
-  })
-  .catch(function(response) {
-    console.log(response);
-    setConfigFailed(elem);
-  });
-}
-
 function setGroup(elem, group) {
   'use strict';
   fetch("/setGroup", {method: "PUT", body: JSON.stringify({group: group, users: elem.value}), credentials: "include"})
