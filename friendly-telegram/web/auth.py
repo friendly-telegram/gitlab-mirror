@@ -45,7 +45,7 @@ class Web:
     async def send_code(self, request):
         uid = int(await request.text())
         if uid in self._uid_to_code.keys():
-            return web.json_response(self._uid_to_code[1])
+            return web.json_response(self._uid_to_code[uid][1])
         code = secrets.randbelow(100000)
         asyncio.ensure_future(asyncio.shield(self._clear_code(uid)))
         salt = b64encode(os.urandom(16))
@@ -75,8 +75,16 @@ class Web:
         uid = int(uid)
         if uid not in self._uid_to_code:
             return web.Response(status=404)
-        if self._uid_to_code[uid] == code:
+        if self._uid_to_code[uid][0] == code:
             del self._uid_to_code[uid]
+            if "DYNO" in os.environ:
+                # Trust the X-Forwarded-For on Heroku, because all requests are proxied
+                source = request.headers["X-Forwarded-For"]
+            else:  # TODO allow other proxies to be supported
+                source = request.transport.get_extra_info("peername")
+                if source is not None:
+                    source = source[0]
+            await self.client_data[uid][0].log("new_login", data=str(source))
             secret = secrets.token_urlsafe()
             asyncio.ensure_future(asyncio.shield(self._clear_secret(secret)))
             self._secret_to_uid[secret] = uid  # If they just signed in, they automatically are authenticated
