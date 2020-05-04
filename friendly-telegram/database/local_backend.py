@@ -50,7 +50,9 @@ class LocalBackend():
            Return True or throw"""
         async with self._lock:
             self._file.seek(0)
+            self._file.truncate()
             self._file.write(data)
+            self._file.flush()
 
     async def store_asset(self, message):
         return await self._cloud_db.store_asset(message)

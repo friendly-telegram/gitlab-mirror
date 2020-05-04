@@ -60,6 +60,51 @@
   </div>
 
 
+  <br>
+  <div class="mdl-card mdl-shadow--2dp padded" style="width: 100%;" id="groups">
+    <div class="mdl-card__title">
+      <h4 class="mdl-card__title-text">Permission Groups</h4>
+    </div>
+    <div class="mdl-cad__supporting-text" style="width:100%;">
+      <h5 style="font-weight: 300;">Owner</h5>
+      <p>The owner is the highest level of privilege. They can use any command by default (though this can be configured). Enter the ID below, or leave blank to use the currently signed in user.</p>
+      <br>
+      <form action="#">
+        <div class="mdl-textfield mdl-js-textfield">
+          <input class="mdl-textfield__input" type="text" pattern="[0-9]+" id="owner_id" data-defaultvalue="" data-currentvalue="{{ owner }}" value="{{ owner }}" onchange="setOwner(this);">
+          <label class="mdl-textfield__label" for="owner_id">Owner ID...</label>
+          <span class="mdl-textfield__error">Input is not a number!</span>
+        </div>
+      </form>
+
+      <br>
+      <h5 style="font-weight: 300;">Sudo</h5>
+      <p>Sudo users are the highest non-owner level of privilege. They can use most commands by default. Enter the IDs below, comma-separated.</p>
+      <br>
+      <form action="#">
+        <div class="mdl-textfield mdl-js-textfield">
+          <input class="mdl-textfield__input" type="text" pattern="([0-9]+(,|$))+" id="sudo_ids" data-defaultvalue="" data-currentvalue="{{ sudo }}" value="{{ sudo }}" onchange="setGroup(this, 'sudo');">
+          <label class="mdl-textfield__label" for="sudo_ids">Sudo IDs...</label>
+          <span class="mdl-textfield__error">Input is not a comma-separated list of numbers!</span>
+        </div>
+      </form>
+
+      <br>
+      <h5 style="font-weight: 300;"></h5>
+      <p>Support users are the lowest special level of privilege. They can only use a few commands by default. Enter the IDs below, comma-separated.</p>
+      <br>
+      <form action="#">
+        <div class="mdl-textfield mdl-js-textfield">
+          <input class="mdl-textfield__input" type="text" pattern="([0-9]+(,|$))+" id="support_ids" data-defaultvalue="" data-currentvalue="{{ sudo }}" value="{{ support }}" onchange="setGroup(this, 'support');">
+          <label class="mdl-textfield__label" for="support_ids">Support IDs...</label>
+          <span class="mdl-textfield__error">Input is not a comma-separated list of numbers!</span>
+        </div>
+      </form>
+      <br>
+    </div>
+  </div>
+
+
   {% for module in modules %}
     {% set ns2.module_number = ns2.module_number + 1 %}
     {% if module.commands %}

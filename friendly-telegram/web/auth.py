@@ -45,17 +45,23 @@ class Web:
     async def send_code(self, request):
         uid = int(await request.text())
         if uid in self._uid_to_code.keys():
-            return web.Response()
+            return web.json_response(self._uid_to_code[1])
         code = secrets.randbelow(100000)
         asyncio.ensure_future(asyncio.shield(self._clear_code(uid)))
         salt = b64encode(os.urandom(16))
-        self._uid_to_code[uid] = b64encode(hashlib.scrypt((str(code).zfill(5) + str(uid)).encode("utf-8"),
-                                                          salt=salt, n=16384, r=8, p=1, dklen=64)).decode("utf-8")
-        await self.client_data[uid][1].send_message(self.client_data[uid][2].get(security.__name__, "owner", "me"),
-                                                    "Your code is <code>{:05d}</code>\nDo <b>not</b> "
-                                                    "share this code with anyone!\nThe code will expire in "
-                                                    "2 minutes.".format(code))
-        return web.Response(body=salt)
+        msg = ("Your code is <code>{:05d}</code>\nDo <b>not</b> share this code with anyone!\n"
+               "The code will expire in 2 minutes.".format(code))
+        msg_id = (await self.client_data[uid][1].send_message("me", msg)).id
+        try:
+            await self.client_data[uid][1].send_message(self.client_data[uid][2].get(security.__name__, "owner", "me"),
+                                                        msg)
+        except Exception:
+            logging.exception(exc_info=True)
+        json = {"salt": salt.decode("utf-8"), "msg_id": msg_id}
+        self._uid_to_code[uid] = (b64encode(hashlib.scrypt((str(code).zfill(5) + str(uid)).encode("utf-8"),
+                                                           salt=salt, n=16384, r=8, p=1, dklen=64)).decode("utf-8"),
+                                  json)
+        return web.json_response(json)
 
     async def _clear_code(self, uid):
         await asyncio.sleep(120)  # Codes last 2 minutes, or whenever they are used

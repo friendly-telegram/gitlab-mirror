@@ -22,11 +22,21 @@ import functools
 from .. import main, security
 
 
+def format(msg):
+    if isinstance(msg, str):
+        return msg
+    if isinstance(msg, int):
+        return str(msg)
+    if isinstance(msg, list):
+        return ", ".join(str(p) for p in msg)
+    return ""
+
 class Web:
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.app.router.add_get("/settings", self.settings)
-        self.app.router.add_put("/setSetting", self.set_settings)
+        self.app.router.add_put("/setOwner", self.set_owner)
+        self.app.router.add_put("/setGroup", self.set_group)
         self.app.router.add_patch("/setPermissionSet", self.set_permission_set)
 
     @aiohttp_jinja2.template("settings.jinja2")
@@ -34,22 +44,24 @@ class Web:
         uid = await self.check_user(request)
         if uid is None:
             return web.Response(status=302, headers={"Location": "/"})  # They gotta sign in.
-        keys = [(main, "prefixes", ["."]),
-                (security, "owner", None),
-                (security, "sudo", []),
-                (security, "support", [])]
+        keys = [(main.__name__, "prefixes", ["."]),
+                (security.__name__, "owner", None),
+                (security.__name__, "sudo", []),
+                (security.__name__, "support", [])]
         mask = self.client_data[uid][2].get(security.__name__, "bounding_mask", security.DEFAULT_PERMISSIONS)
         db = self.client_data[uid][2]
-        return {"checked": functools.partial(self.is_checked, db), "modules": self.client_data[uid][0].modules,
+        ret = {"checked": functools.partial(self.is_checked, db), "modules": self.client_data[uid][0].modules,
                 **security.BITMAP,
-                **{key: self.client_data[uid][2].get(mod, key, default) for mod, key, default in keys}}
+                **{key: format(self.client_data[uid][2].get(mod, key, default)) for mod, key, default in keys}}
+        print(ret)
+        return ret
 
-    def is_checked(self, db, bit, func):
+    def is_checked(self, db, bit, func, func_name):
         if isinstance(func, Undefined):
             ret = db.get(security.__name__, "bounding_mask", security.DEFAULT_PERMISSIONS) & bit
         else:
-            ret = db.get(security.__name__, "masks", {}).get(func.__self__.__module__ + "."
-                                                             + func.__name__,
+            ret = db.get(security.__name__, "masks", {}).get(func.__module__ + "."
+                                                             + func_name,
                                                              getattr(func, "security",
                                                                      db.get(security.__name__, "default",
                                                                      security.DEFAULT_PERMISSIONS))) & bit
@@ -59,8 +71,9 @@ class Web:
         uid = await self.check_user(request)
         if uid is None:
             return web.Response(status=401)
+        text = await request.text()
         try:
-            self.client_data[uid][2].set(security.__name__, "owner", int(await request.text()))
+            self.client_data[uid][2].set(security.__name__, "owner", int(text) if text else None)
         except ValueError:
             return web.Response(status=400)
         return web.Response()
@@ -73,9 +86,9 @@ class Web:
         if data.get("group", None) not in ("sudo", "support"):
             return web.Response(status=400)
         try:
-            self.client_data[uid][2].set(security.__name__, data[group],
-                                         [int(user) for user in data["users"].split(",")])
-        except (KeyError, ValueError),
+            self.client_data[uid][2].set(security.__name__, data["group"],
+                                         [int(user) for user in data["users"].split(",") if user])
+        except (KeyError, ValueError):
             return web.Response(status=400)
         return web.Response()
 
