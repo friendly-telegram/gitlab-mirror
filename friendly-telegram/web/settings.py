@@ -31,6 +31,7 @@ def format(msg):
         return ", ".join(str(p) for p in msg)
     return ""
 
+
 class Web:
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -48,23 +49,19 @@ class Web:
                 (security.__name__, "owner", None),
                 (security.__name__, "sudo", []),
                 (security.__name__, "support", [])]
-        mask = self.client_data[uid][2].get(security.__name__, "bounding_mask", security.DEFAULT_PERMISSIONS)
         db = self.client_data[uid][2]
-        ret = {"checked": functools.partial(self.is_checked, db), "modules": self.client_data[uid][0].modules,
+        return {"checked": functools.partial(self.is_checked, db), "modules": self.client_data[uid][0].modules,
                 **security.BITMAP,
                 **{key: format(self.client_data[uid][2].get(mod, key, default)) for mod, key, default in keys}}
-        print(ret)
-        return ret
 
     def is_checked(self, db, bit, func, func_name):
         if isinstance(func, Undefined):
             ret = db.get(security.__name__, "bounding_mask", security.DEFAULT_PERMISSIONS) & bit
         else:
-            ret = db.get(security.__name__, "masks", {}).get(func.__module__ + "."
-                                                             + func_name,
+            ret = db.get(security.__name__, "masks", {}).get(func.__module__ + "." + func_name,
                                                              getattr(func, "security",
                                                                      db.get(security.__name__, "default",
-                                                                     security.DEFAULT_PERMISSIONS))) & bit
+                                                                            security.DEFAULT_PERMISSIONS))) & bit
         return "checked" if ret else ""
 
     async def set_owner(self, request):
@@ -103,10 +100,13 @@ class Web:
             return web.Response(status=400)
         mod = self.client_data[uid][0].modules[int(data["mid"])]
         func = data["func"]
+        db = self.client_data[uid][2]
         if mod and func:
-            mask = self.client_data[uid][2].get(security.__name__, "masks", {}).get(mod.__module__ + "." + func, getattr(mod.commands[func], "security", security.DEFAULT_PERMISSIONS))
+            mask = db.get(security.__name__, "masks", {}).get(mod.__module__ + "." + func,
+                                                              getattr(mod.commands[func], "security",
+                                                                      security.DEFAULT_PERMISSIONS))
         else:
-            mask = self.client_data[uid][2].get(security.__name__, "bounding_mask", security.DEFAULT_PERMISSIONS)
+            mask = db.get(security.__name__, "bounding_mask", security.DEFAULT_PERMISSIONS)
         try:
             if data["state"]:
                 mask |= bit

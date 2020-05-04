@@ -341,7 +341,6 @@ async def amain(client, allclients, web, arguments):
         babelfish = Translator(db.get(__name__, "langpacks", []), db.get(__name__, "language", ["en"]))
         await babelfish.init(client)
 
-
         modules = loader.Modules()
 
         if web and not arguments.heroku_deps_internal:

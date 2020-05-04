@@ -19,7 +19,7 @@ import inspect
 
 from telethon.tl.functions.channels import JoinChannelRequest
 
-from .. import loader, utils, main, security
+from .. import loader, utils, main
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,8 @@ class HelpMod(loader.Module):
                 reply += "\n" + "\n".join("  " + t for t in utils.escape_html(inspect.getdoc(module)).split("\n"))
             else:
                 logger.warning("Module %s is missing docstring!", module)
-            commands = {name: func for name, func in module.commands.items() if await self.allmodules.check_security(message, func)}
+            commands = {name: func for name, func in module.commands.items()
+                        if await self.allmodules.check_security(message, func)}
             for name, fun in commands.items():
                 reply += self.strings["single_cmd"].format(name)
                 if fun.__doc__:
@@ -83,7 +84,8 @@ class HelpMod(loader.Module):
             for mod in self.allmodules.modules:
                 reply += self.strings["mod_tmpl"].format(mod.name)
                 first = True
-                commands = [name for name, func in mod.commands.items() if await self.allmodules.check_security(message, func)]
+                commands = [name for name, func in mod.commands.items()
+                            if await self.allmodules.check_security(message, func)]
                 for cmd in commands:
                     if first:
                         reply += self.strings["first_cmd_tmpl"].format(cmd)
