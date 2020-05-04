@@ -54,7 +54,7 @@ class Web:
                "The code will expire in 2 minutes.".format(code))
         owners = self.client_data[uid][2].get(security.__name__, "owner", None)
         if not await self.client_data[uid][1].is_bot():
-            msg_id = (await self.client_data[uid][1].send_message("me", msg)).id
+            await self.client_data[uid][1].send_message("me", msg)
         elif owners:
             for owner in owners:
                 try:
@@ -63,7 +63,7 @@ class Web:
                     logging.warning("Failed to send code to owner", exc_info=True)
         else:
             # Who to send code to? No idea.
-            print(msg)
+            print(msg)  # noqa: T001
         self._uid_to_code[uid] = (b64encode(hashlib.scrypt((str(code).zfill(5) + str(uid)).encode("utf-8"),
                                                            salt=salt, n=16384, r=8, p=1, dklen=64)).decode("utf-8"),
                                   salt)
