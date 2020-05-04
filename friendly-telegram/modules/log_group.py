@@ -16,6 +16,7 @@
 
 import logging
 
+import telethon
 from telethon.tl.types import MessageEntityHashtag, MessageEntityBold, InputPeerSelf
 from telethon.tl.types import MessageEntityCode, MessageEntityMentionName, InputPeerUser
 
@@ -91,7 +92,10 @@ class LoggerMod(loader.Module):
             message += "\n\n" + data
         logger.debug(message)
         await self._client.send_message(chat, message, parse_mode=lambda m: (m, entities))
+        if not self._is_bot:
+            await self._client(telethon.functions.messages.MarkDialogUnreadRequest(chat, True))
 
     async def client_ready(self, client, db):
         self._client = client
+        self._is_bot = await client.is_bot()
         self.allmodules.register_logger(self._log)
