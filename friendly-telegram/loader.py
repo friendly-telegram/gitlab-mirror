@@ -26,6 +26,7 @@ import functools
 import inspect
 
 from . import utils, security
+from .translations.dynamic import Strings
 
 owner = security.owner
 sudo = security.sudo
@@ -87,12 +88,15 @@ class ModuleConfig(dict):
         self._docstrings = dict(zip(keys, docstrings))
         self._defaults = dict(zip(keys, defaults))
 
-    def getdoc(self, key):
+    def getdoc(self, key, message=None):
         """Get the documentation by key"""
         ret = self._docstrings[key]
         if callable(ret):
-            ret = ret()
-            self._docstrings[key] = ret
+            try:
+                ret = ret(message)
+            except TypeError:  # Invalid number of params
+                logging.warning("%s using legacy doc trnsl", key)
+                ret = ret()
         return ret
 
     def getdef(self, key):
@@ -102,9 +106,6 @@ class ModuleConfig(dict):
 
 class Module():
     """There is no help for this module"""
-    def __init__(self):
-        self.name = "Unknown"
-
     def config_complete(self):
         """Will be called when module.config is populated"""
 
@@ -246,12 +247,10 @@ class Modules():
                         logging.debug("No config value for %s", conf)
                         mod.config[conf] = mod.config.getdef(conf)
             logging.debug(mod.config)
+        if babel is not None and not hasattr(mod, "name"):
+            mod.name = mod.strings["name"]
         if hasattr(mod, "strings") and babel is not None:
-            mod.strings = mod.strings.copy()  # For users with many accounts with diff. translations
-            for key, value in mod.strings.items():
-                new = babel.getkey(mod.__module__ + "." + key)
-                if new is not False:
-                    mod.strings[key] = new
+            mod.strings = Strings(mod.__module__, mod.strings, babel)
         if skip_hook:
             return
         mod.babel = babel

@@ -164,7 +164,7 @@ def _fix_entities(ent, cont_msg, initial=False):
 
 async def answer(message, response, **kwargs):
     """Use this to give the response to a command"""
-    if await message.client.is_bot() and len(response) > 4096:
+    if await message.client.is_bot() and isinstance(response, str) and len(response) > 4096:
         kwargs.setdefault("asfile", True)
     kwargs.setdefault("link_preview", False)
     cont_msg = "[continued]\n"
@@ -184,9 +184,10 @@ async def answer(message, response, **kwargs):
             _fix_entities(ent, cont_msg)
             ret.append(await (message.reply if edit else message.respond)(message, **kwargs))
     elif isinstance(response, Message):
-        await message.edit("<b>Loading message...</b>")
+        txt = "<b>Loading message...</b>"
+        new = await (message.edit if edit else message.reply)(txt)
         ret = [await message.respond(response, **kwargs)]
-        await message.delete()
+        await new.delete()
     else:
         if isinstance(response, bytes):
             response = io.BytesIO(response)
@@ -199,10 +200,10 @@ async def answer(message, response, **kwargs):
             await message.edit(file=response, **kwargs)
         else:
             txt = "<b>Loading media...</b>"  # TODO translations
-            await (message.edit if edit else message.reply)(txt)
+            new = await (message.edit if edit else message.reply)(txt)
             ret = [await message.client.send_file(message.chat_id, response,
                                                   reply_to=message.reply_to_msg_id, **kwargs)]
-            await message.delete()
+            await new.delete()
     return ret
 
 

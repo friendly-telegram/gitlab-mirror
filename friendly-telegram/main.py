@@ -292,7 +292,7 @@ def main():  # noqa: C901
     loops = [amain(client, clients, web, arguments) for client in clients]
 
     loop.set_exception_handler(lambda _, x:
-                               logging.error("Exception on event loop! %s", x["message"], exc_info=x["exception"]))
+                               logging.error("Exception on event loop! %s", x["message"], exc_info=x.get("exception", None)))
     loop.run_until_complete(asyncio.gather(*loops))
 
 

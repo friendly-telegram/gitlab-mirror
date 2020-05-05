@@ -14,6 +14,8 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import os
+
 from .. import loader, main, utils
 import telethon
 
@@ -45,9 +47,6 @@ class CoreMod(loader.Module):
                "lang_set": "<b>Language changed</b>",
                "db_cleared": "<b>Dataase cleared</b>"}
 
-    def config_complete(self):
-        self.name = self.strings["name"]
-
     async def client_ready(self, client, db):
         self._db = db
         self._client = client
@@ -55,7 +54,7 @@ class CoreMod(loader.Module):
     async def blacklistcommon(self, message):
         args = utils.get_args(message)
         if len(args) > 2:
-            await utils.answer(message, self.strings["too_many_args"])
+            await utils.answer(message, self.strings("too_many_args", message))
             return
         chatid = None
         module = None
@@ -76,7 +75,7 @@ class CoreMod(loader.Module):
            Blacklist the bot from operating somewhere"""
         chatid = await self.blacklistcommon(message)
         self._db.set(main.__name__, "blacklist_chats", self._db.get(main.__name__, "blacklist_chats", []) + [chatid])
-        await utils.answer(message, self.strings["blacklisted"].format(chatid))
+        await utils.answer(message, self.strings("blacklisted", message).format(chatid))
 
     async def unblacklistcmd(self, message):
         """.unblacklist [id]
@@ -84,41 +83,41 @@ class CoreMod(loader.Module):
         chatid = await self.blacklistcommon(message)
         self._db.set(main.__name__, "blacklist_chats",
                      list(set(self._db.get(main.__name__, "blacklist_chats", [])) - set([chatid])))
-        await utils.answer(message, self.strings["unblacklisted"].format(chatid))
+        await utils.answer(message, self.strings("unblacklisted", message).format(chatid))
 
     @loader.owner
     async def setprefixcmd(self, message):
         """Sets command prefix"""
         args = utils.get_args(message)
         if len(args) != 1:
-            await utils.answer(message, self.strings["what_prefix"])
+            await utils.answer(message, self.strings("what_prefix", message))
             return
         oldprefix = self._db.get(main.__name__, "command_prefix", ".")
         self._db.set(main.__name__, "command_prefix", args[0])
-        await utils.answer(message, self.strings["prefix_set"].format(newprefix=utils.escape_html(args[0]),
-                                                                      oldprefix=utils.escape_html(oldprefix)))
+        await utils.answer(message, self.strings("prefix_set", message).format(newprefix=utils.escape_html(args[0]),
+                                                                               oldprefix=utils.escape_html(oldprefix)))
 
     @loader.owner
     async def addaliascmd(self, message):
         """Set an alias for a command"""
         args = utils.get_args(message)
         if len(args) != 2:
-            await utils.answer(message, self.strings["alias_args"])
+            await utils.answer(message, self.strings("alias_args", message))
             return
         alias, cmd = args
         ret = self.allmodules.add_alias(alias, cmd)
         if ret:
             self._db.set(__name__, "aliases", {**self._db.get(__name__, "aliases"), alias: cmd})
-            await utils.answer(message, self.strings["alias_created"].format(utils.escape_html(alias)))
+            await utils.answer(message, self.strings("alias_created", message).format(utils.escape_html(alias)))
         else:
-            await utils.answer(message, self.strings["no_command"].format(utils.escape_html(cmd)))
+            await utils.answer(message, self.strings("no_command", message).format(utils.escape_html(cmd)))
 
     @loader.owner
     async def delaliascmd(self, message):
         """Remove an alias for a command"""
         args = utils.get_args(message)
         if len(args) != 1:
-            await utils.answer(message, self.strings["delalias_args"])
+            await utils.answer(message, self.strings("delalias_args", message))
             return
         alias = args[0]
         ret = self.allmodules.remove_alias(alias)
@@ -126,9 +125,9 @@ class CoreMod(loader.Module):
             current = self._db.get(__name__, "aliases")
             del current[alias]
             self._db.set(__name__, "aliases", current)
-            await utils.answer(message, self.strings["alias_removed"].format(utils.escape_html(alias)))
+            await utils.answer(message, self.strings("alias_removed", message).format(utils.escape_html(alias)))
         else:
-            await utils.answer(message, self.strings["no_alias"].format(utils.escape_html(alias)))
+            await utils.answer(message, self.strings("no_alias", message).format(utils.escape_html(alias)))
 
     async def addtrnslcmd(self, message):
         """Add a translation pack
@@ -136,29 +135,41 @@ class CoreMod(loader.Module):
            Restart required after use"""
         args = utils.get_args(message)
         if len(args) != 1:
-            await utils.answer(message, self.strings["no_pack"])
+            await utils.answer(message, self.strings("no_pack", message))
             return
         pack = args[0]
-        try:
-            pack = int(pack)
-        except ValueError:
-            pass
-        try:
-            pack = await self._client.get_entity(pack)
-        except ValueError:
-            await utils.answer(message, self.strings["bad_pack"])
-            return
-        if isinstance(pack, telethon.tl.types.Channel) and not pack.megagroup:
-            self._db.setdefault(main.__name__, {}).setdefault("langpacks", []).append(pack.id)
+        if await message.client.is_bot():
+            # TODO check filename and save
+            if not pack.isalnum():
+                await utils.answer(message, self.strings("bad_pack", message))
+                return
+            if not os.path.isfile(os.path.join("translations", pack + ".json")):
+                await utils.answer(message, self.strings("bad_pack", message))
+                return
+            self._db.setdefault(main.__name__, {}).setdefault("langpacks", []).append(pack)
             self._db.save()
-            await utils.answer(message, self.strings["trnsl_saved"])
+            await utils.answer(message, self.strings("trnsl_saved", message))
         else:
-            await utils.answer(message, self.strings["bad_pack"])
+            try:
+                pack = int(pack)
+            except ValueError:
+                pass
+            try:
+                pack = await self._client.get_entity(pack)
+            except ValueError:
+                await utils.answer(message, self.strings("bad_pack", message))
+                return
+            if isinstance(pack, telethon.tl.types.Channel) and not pack.megagroup:
+                self._db.setdefault(main.__name__, {}).setdefault("langpacks", []).append(pack.id)
+                self._db.save()
+                await utils.answer(message, self.strings("trnsl_saved", message))
+            else:
+                await utils.answer(message, self.strings("bad_pack", message))
 
     async def cleartrnslcmd(self, message):
         """Remove all translation packs"""
         self._db.set(main.__name__, "langpacks", [])
-        await utils.answer(message, self.strings["packs_cleared"])
+        await utils.answer(message, self.strings("packs_cleared", message))
 
     async def setlangcmd(self, message):
         """Change the preferred language used for translations
@@ -167,14 +178,14 @@ class CoreMod(loader.Module):
            Restart required after use"""
         langs = utils.get_args(message)
         self._db.set(main.__name__, "language", langs)
-        await utils.answer(message, self.strings["lang_set"])
+        await utils.answer(message, self.strings("lang_set", message))
 
     @loader.owner
     async def cleardbcmd(self, message):
         """Clears the entire database, effectively performing a factory reset"""
         self._db.clear()
         await self._db.save()
-        await utils.answer(message, self.strings["db_cleared"])
+        await utils.answer(message, self.strings("db_cleared", message))
 
     async def _client_ready2(self, client, db):
         ret = {}

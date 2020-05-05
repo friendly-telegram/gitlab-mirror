@@ -36,10 +36,7 @@ class LoggerMod(loader.Module):
                "log_id_cfg": "Chat ID where logs are saved"}
 
     def __init__(self):
-        self.config = loader.ModuleConfig("LOG_ID", None, lambda: self.strings["log_id_cfg"])
-
-    def config_complete(self):
-        self.name = self.strings["name"]
+        self.config = loader.ModuleConfig("LOG_ID", None, lambda m: self.strings("log_id_cfg", m))
 
     async def append_entity(self, id, entities, message):
         fail = True
