@@ -65,7 +65,7 @@ class HelpMod(loader.Module):
                                                                                                        message)),
                                                                       utils.escape_html(self.db.get(main.__name__,
                                                                                                     "command_prefix",
-                                                                                                    False) or "."))
+                                                                                                    False) or ".")[0])
             if module.__doc__:
                 reply += "\n" + "\n".join("  " + t for t in utils.escape_html(inspect.getdoc(module)).split("\n"))
             else:
