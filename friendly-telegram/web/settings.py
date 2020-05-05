@@ -90,8 +90,9 @@ class Web:
         func = data["func"]
         db = self.client_data[uid][2]
         if mod and func:
-            mask = db.get(security.__name__, "masks", {}).get(mod.__module__ + "." + func,
-                                                              getattr(mod.commands[func], "security",
+            function = mod.commands[func]
+            mask = db.get(security.__name__, "masks", {}).get(mod.__module__ + "." + function.__name__,
+                                                              getattr(function, "security",
                                                                       security.DEFAULT_PERMISSIONS))
         else:
             mask = db.get(security.__name__, "bounding_mask", security.DEFAULT_PERMISSIONS)
@@ -104,7 +105,7 @@ class Web:
             return web.Response(status=400)
         if mod and func:
             masks = self.client_data[uid][2].get(security.__name__, "masks", {})
-            masks[mod.__module__ + "." + func] = mask
+            masks[mod.__module__ + "." + function.__name__] = mask
             self.client_data[uid][2].set(security.__name__, "masks", masks)
         else:
             self.client_data[uid][2].set(security.__name__, "bounding_mask", mask)

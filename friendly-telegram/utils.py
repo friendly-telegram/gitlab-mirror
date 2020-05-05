@@ -172,7 +172,7 @@ async def answer(message, response, **kwargs):
     edit = message.from_id == (await message.client.get_me(True)).user_id
     if isinstance(response, str) and not kwargs.pop("asfile", False):
         txt, ent = html.parse(response)
-        await (message.edit if edit else message.reply)(html.unparse(txt[:4096], ent))
+        await (message.edit if edit else message.reply)(html.unparse(txt[:4096], ent), **kwargs)
         txt = txt[4096:]
         _fix_entities(ent, cont_msg, True)
         while len(txt) > 0:

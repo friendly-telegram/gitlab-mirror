@@ -89,11 +89,11 @@ class CoreMod(loader.Module):
     async def setprefixcmd(self, message):
         """Sets command prefix"""
         args = utils.get_args(message)
-        if len(args) != 1:
+        if len(args) == 0:
             await utils.answer(message, self.strings("what_prefix", message))
             return
-        oldprefix = self._db.get(main.__name__, "command_prefix", ".")
-        self._db.set(main.__name__, "command_prefix", args[0])
+        oldprefix = self._db.get(main.__name__, "command_prefix", ["."])[0]
+        self._db.set(main.__name__, "command_prefix", args)
         await utils.answer(message, self.strings("prefix_set", message).format(newprefix=utils.escape_html(args[0]),
                                                                                oldprefix=utils.escape_html(oldprefix)))
 
