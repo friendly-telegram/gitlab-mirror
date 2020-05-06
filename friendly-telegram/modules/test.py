@@ -48,7 +48,6 @@ class TestMod(loader.Module):
         """Does nothing"""
         await utils.answer(message, self.strings("pong", message))
 
-    @loader.unrestricted
     async def dumpcmd(self, message):
         """Use in reply to get a dump of a message"""
         if not message.is_reply:
