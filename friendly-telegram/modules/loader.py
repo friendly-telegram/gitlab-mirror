@@ -28,7 +28,6 @@ from importlib.machinery import ModuleSpec
 from importlib.abc import SourceLoader
 
 from .. import loader, utils
-from ..compat import uniborg
 
 logger = logging.getLogger(__name__)
 
@@ -217,12 +216,8 @@ class LoaderMod(loader.Module):
         module_name = "friendly-telegram.modules." + uid
         try:
             try:
-                module = importlib.util.module_from_spec(ModuleSpec(module_name, StringLoader(doc, origin),
-                                                                    origin=origin))
-                sys.modules[module_name] = module
-                module.borg = uniborg.UniborgClient(module_name)
-                module._ = _  # noqa: F821
-                module.__spec__.loader.exec_module(module)
+                spec = ModuleSpec(module_name, StringLoader(doc, origin), origin=origin)
+                instance = self.allmodules.register_module(spec, module_name)
             except ImportError:
                 logger.info("Module loading failed, attemping dependency installation", exc_info=True)
                 # Let's try to reinstall dependencies
@@ -254,17 +249,9 @@ class LoaderMod(loader.Module):
             if message is not None:
                 await utils.answer(message, self.strings("load_failed", message))
             return False
-        if "register" not in vars(module):
-            if message is not None:
-                await utils.answer(message, self.strings("load_failed", message))
-            logger.error("Module does not have register(), it has " + repr(vars(module)))
-            return False
         try:
-            try:
-                module.register(self.register_and_configure, module_name)
-            except TypeError:
-                module.register(self.register_and_configure)
-            await self._pending_setup.pop()
+            self.allmodules.send_config_one(instance, self._db, self.babel)
+            await self.allmodules.send_ready_one(instance, self._client, self._db, self.allclients)
         except Exception:
             logger.exception("Module threw")
             if message is not None:

@@ -311,7 +311,7 @@ class RaphielgangEvents():
                         func.__self__.__module__ = events_instance.module
                     else:
                         func.__self__ = self
-                self.name = "RaphielGang" + str(self.instance_id)
+                self.strings = {"name": "RaphielGang" + str(self.instance_id)}
                 self.unknowns = events_instance.unknowns
                 self.__module__ = events_instance.module
 

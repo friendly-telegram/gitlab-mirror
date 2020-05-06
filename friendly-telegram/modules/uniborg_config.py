@@ -23,12 +23,8 @@ from ..compat import uniborg
 logger = logging.getLogger(__name__)
 
 
-def register(cb):
-    cb(UniborgConfig())
-
-
 @loader.tds
-class UniborgConfig(loader.Module):
+class UniborgConfigMod(loader.Module):
     """Stores configuration for Uniborg modules"""
     strings = {"name": "Uniborg configuration placeholder",
                "cfg_doc": "External configuration item"}

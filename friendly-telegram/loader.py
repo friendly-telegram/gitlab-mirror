@@ -129,8 +129,6 @@ def get_commands(mod):
 
 class Modules():
     """Stores all registered modules"""
-    instances = []
-
     def __init__(self):
         self.commands = {}
         self.aliases = {}
@@ -138,13 +136,11 @@ class Modules():
         self.watchers = []
         self._compat_layer = None
         self._log_handlers = []
-        self.instances.append(self)
         self.client = None
 
     def register_all(self, babelfish, mods=None):
         """Load all modules in the module directory"""
         if self._compat_layer is None:
-            from .compat import uniborg
             from . import compat  # Avoid circular import
             self._compat_layer = compat.activate([])
         logging.debug(os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), MODULES_NAME)))
@@ -159,27 +155,27 @@ class Modules():
                 logging.debug(os.path.join(utils.get_base_dir(), MODULES_NAME, mod))
                 spec = importlib.util.spec_from_file_location(module_name,
                                                               os.path.join(utils.get_base_dir(), MODULES_NAME, mod))
-                module = importlib.util.module_from_spec(spec)
-                sys.modules[module_name] = module  # Do this early for the benefit of RaphielGang compat layer
-                module.borg = uniborg.UniborgClient(module_name)
-                spec.loader.exec_module(module)
-                module._ = babelfish.gettext
-                for key, value in vars(module).items():
-                    if key.endswith("Mod") and isinstance(value, Module):
-                        self.register_module(value())
-                        return
-                try:
-                    module.register(self.register_module, module_name)
-                except TypeError:  # Too many arguments
-                    module.register(self.register_module)
+                self.register_module(spec, module_name)
             except BaseException:
                 logging.exception("Failed to load module %s due to:", mod)
 
-    def register_module(self, instance):
-        """Register single module instance"""
-        if not issubclass(type(instance), Module):
-            logging.error("Not a subclass %s", repr(instance.__class__))
-        self.complete_registration(instance)
+    def register_module(self, spec, module_name):
+        """Register single module from importlib spec"""
+        from .compat import uniborg
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module  # Do this early for the benefit of RaphielGang compat layer
+        module.borg = uniborg.UniborgClient(module_name)
+        spec.loader.exec_module(module)
+        ret = None
+        for key, value in vars(module).items():
+            if key.endswith("Mod") and issubclass(value, Module):
+                ret = value()
+        if ret is None:
+            ret = module.register(module_name)
+            if not isinstance(ret, Module):
+                raise TypeError("Instance is not a Module, it is %r", ret)
+        self.complete_registration(ret)
+        return ret
 
     def register_commands(self, instance):
         """Register commands from instance"""
@@ -211,10 +207,7 @@ class Modules():
 
     def complete_registration(self, instance):
         """Complete registration of instance"""
-        # Mainly for the Help module
         instance.allmodules = self
-        # And for Remote
-        instance.allloaders = self.instances
         instance.log = self.log  # Like botlog from PP
         for module in self.modules:
             if module.__class__.__name__ == instance.__class__.__name__:
@@ -278,7 +271,9 @@ class Modules():
             logging.exception("Failed to send mod init complete signal")
 
     async def send_ready_one(self, mod, client, db, allclients, core=False):
-        mod.allclients = allclients
+        if core:
+            mod.allclients = allclients
+
         try:
             await mod.client_ready(client, db)
         except Exception:

@@ -23,12 +23,8 @@ from .. import loader
 logger = logging.getLogger(__name__)
 
 
-def register(cb):
-    cb(RaphielgangConfig())
-
-
 @loader.tds
-class RaphielgangConfig(loader.Module):
+class RaphielgangConfigMod(loader.Module):
     """Stores configuration for Raphielgang modules"""
     strings = {"name": "Raphielgang Configuration Placeholder",
                "cfg_doc": "External configuration item"}

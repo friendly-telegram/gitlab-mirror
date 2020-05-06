@@ -358,8 +358,6 @@ async def amain(client, allclients, web, arguments):
         if arguments.heroku_deps_internal:
             # Loader has installed all dependencies
             return  # We are done
-        if not is_bot:
-            await client.get_dialogs()  # Make sure all dialogs are cached
         if not web_only:
             dispatcher = CommandDispatcher(modules, db, is_bot)
             await dispatcher.init(client)
