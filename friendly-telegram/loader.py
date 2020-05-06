@@ -164,6 +164,10 @@ class Modules():
                 module.borg = uniborg.UniborgClient(module_name)
                 spec.loader.exec_module(module)
                 module._ = babelfish.gettext
+                for key, value in vars(module):
+                    if key.endswith("Mod") and isinstance(value, object):
+                        register_module(value())
+                        return
                 try:
                     module.register(self.register_module, module_name)
                 except TypeError:  # Too many arguments
