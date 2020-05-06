@@ -71,7 +71,6 @@ class TestMod(loader.Module):
         if lvl is None:
             await utils.answer(message, self.strings("bad_loglevel", message))
             return
-        await utils.answer(message, self.strings("uploading_logs", message))
         [handler] = logging.getLogger().handlers
         logs = ("\n".join(handler.dumps(lvl))).encode("utf-8")
         if not len(logs) > 0:
@@ -79,8 +78,7 @@ class TestMod(loader.Module):
             return
         logs = BytesIO(logs)
         logs.name = self.strings("logs_filename", message)
-        await message.client.send_file(message.to_id, logs, caption=self.strings("logs_caption", message).format(lvl))
-        await message.delete()
+        await utils.answer(message, logs, caption=self.strings("logs_caption", message).format(lvl))
 
     @loader.owner
     async def suspendcmd(self, message):

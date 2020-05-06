@@ -164,15 +164,19 @@ def _fix_entities(ent, cont_msg, initial=False):
 
 async def answer(message, response, **kwargs):
     """Use this to give the response to a command"""
+    if isinstance(message, list):
+        delete_job = asyncio.ensure_future(message[0].client.delete_messages(message[0].input_chat, message[1:]))
+        message = message[0]
+    else:
+        delete_job = None
     if await message.client.is_bot() and isinstance(response, str) and len(response) > 4096:
         kwargs.setdefault("asfile", True)
     kwargs.setdefault("link_preview", False)
     cont_msg = "[continued]\n"
-    ret = [message]
-    edit = message.from_id == (await message.client.get_me(True)).user_id
+    edit = message.out
     if isinstance(response, str) and not kwargs.pop("asfile", False):
         txt, ent = html.parse(response)
-        await (message.edit if edit else message.reply)(html.unparse(txt[:4096], ent), **kwargs)
+        ret = [await (message.edit if edit else message.reply)(html.unparse(txt[:4096], ent), **kwargs)]
         txt = txt[4096:]
         _fix_entities(ent, cont_msg, True)
         while len(txt) > 0:
@@ -204,6 +208,8 @@ async def answer(message, response, **kwargs):
             ret = [await message.client.send_file(message.chat_id, response,
                                                   reply_to=message.reply_to_msg_id, **kwargs)]
             await new.delete()
+    if delete_job:
+        await delete_job
     return ret
 
 
