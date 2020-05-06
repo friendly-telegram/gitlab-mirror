@@ -164,8 +164,8 @@ class Modules():
                 module.borg = uniborg.UniborgClient(module_name)
                 spec.loader.exec_module(module)
                 module._ = babelfish.gettext
-                for key, value in vars(module):
-                    if key.endswith("Mod") and isinstance(value, object):
+                for key, value in vars(module).items():
+                    if key.endswith("Mod") and isinstance(value, Module):
                         self.register_module(value())
                         return
                 try:
