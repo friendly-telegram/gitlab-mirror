@@ -305,6 +305,9 @@ async def amain(client, allclients, web, arguments):
     async with client:
         client.parse_mode = "HTML"
         await client.start()
+        is_bot = await client.is_bot()
+        if is_bot:
+            local = True
         [handler] = logging.getLogger().handlers
         dbc = local_backend.LocalBackend if local else backend.CloudBackend
         if setup:
@@ -356,7 +359,7 @@ async def amain(client, allclients, web, arguments):
             # Loader has installed all dependencies
             return  # We are done
         if not web_only:
-            dispatcher = CommandDispatcher(modules, db, await client.is_bot())
+            dispatcher = CommandDispatcher(modules, db, is_bot)
             await dispatcher.init(client)
             modules.check_security = dispatcher.check_security
             client.add_event_handler(dispatcher.handle_incoming,

@@ -79,8 +79,6 @@ class CommandDispatcher:
                     return
             elif tag[1].lower() != self._cached_username:
                 return
-        elif not message.is_private:
-            return
         logging.debug(tag[0])
         txt, func = self._modules.dispatch(tag[0])
         if func is not None:
