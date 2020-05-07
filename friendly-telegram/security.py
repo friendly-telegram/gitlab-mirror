@@ -123,6 +123,20 @@ def _sec(func, flags):
     return func
 
 
+class SafeCoroutine:
+    def __init__(self, coroutine):
+      self._coroutine = coroutine
+
+    def __await__(self):
+        return self._coroutine.__await__()
+
+    def __bool__(self):
+        raise ValueError("Trying to compute truthiness of un-awaited security result")
+
+    def __eq__(self, other):
+        raise ValueError("Trying to compute equality of un-awaited security result")
+
+
 class SecurityManager:
     def __init__(self, db, bot):
         # We read the db during init to prevent people manipulating it at runtime
@@ -139,7 +153,11 @@ class SecurityManager:
         if not self._owner:
             self._owner.append((await client.get_me(True)).user_id)
 
-    async def check(self, message, func):
+    def check(self, *args, **kwargs):
+        # This wrapper function will cause the function to raise if you don't await it
+        return SafeCoroutine(self._check(*args, **kwargs))
+
+    async def _check(self, message, func):
         if isinstance(func, int):
             config = func
         else:

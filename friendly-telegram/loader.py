@@ -68,7 +68,8 @@ tds = translatable_docstring  # Shorter name for modules to use
 
 
 def ratelimit(func):
-    return func  # TODO
+    func.ratelimit = True
+    return func
 
 
 class ModuleConfig(dict):

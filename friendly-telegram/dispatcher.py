@@ -32,6 +32,38 @@ class CommandDispatcher:
         self._me = (await client.get_me(True)).user_id
         self._cached_username = (await client.get_me()).username.lower()
 
+    async def _handle_ratelimit(self, message, func):
+        if self._security.check(message, security.OWNER | security.SUDO | security.SUPPORT):
+            return True
+        start_time = time.time()
+        if hasattr(func, "__func__"):
+            func = func.__func__
+        ratelimit_delay = 60 if getattr(func, "ratelimit", False) else 5
+        if not hasattr(func, "ratelimit_storage_user"):
+            func.ratelimit_storage_user = {}
+        if not hasattr(func, "ratelimit_storage_chat"):
+            func.ratelimit_storage_chat = {}
+
+
+        if not await _handle_ratelimit_data(func.ratelimit_storage_user.setdefault(message.from_id, []),
+                                      ratelimit_delay, start_time, 10):
+            return False
+        if not await _handle_ratelimit_data(func.ratelimit_storage_chat.setdefault(message.chat_id, []),
+                                      ratelimit_delay, start_time, 20):
+            return False
+        return True
+
+    async def _handle_ratelimit_data(self, ratelimit_data, ratelimit_delay, start_time, count):
+        ratelimit_data.append(start_time)
+        if len(ratelimit_data) == count:
+            first_request = ratelimit_data.popleft()
+            if start_time - first_request >= ratelimit_delay:
+                if ratelimit_delay > 5:
+                    return False
+                else:
+                    await asyncio.sleep(ratelimit_delay)
+        return True
+
     async def handle_command(self, event):
         """Handle all commands"""
         # Empty string evaluates to False, so the `or` activates
@@ -84,7 +116,8 @@ class CommandDispatcher:
         logging.debug(tag[0])
         txt, func = self._modules.dispatch(tag[0])
         if func is not None:
-            if await self._security.check(message, func) is not True:
+            await self._handle_ratelimit(message, func)
+            if not await self._security.check(message, func):
                 return
             message.message = txt + message.message[len(command):]
             if str(utils.get_chat_id(message)) + "." + func.__self__.__module__ in blacklist_chats:
@@ -99,13 +132,13 @@ class CommandDispatcher:
             except Exception as e:
                 logging.exception("Command failed")
                 try:
-                    if self._security.check(message, security.OWNER | security.SUDO):
-                        txt = "<b>Sorry, something went wrong!</b>"
-                    else:
+                    if await self._security.check(message, security.OWNER | security.SUDO):
                         txt = ("<b>Request failed! Request was</b> <code>" + utils.escape_html(message.message)
                                + "</code><b>. Please report it in the support group "
                                "(</b><code>{0}support</code><b>) along with the logs "
                                "(</b><code>{0}logs error</code><b>)</b>").format(prefix)
+                    else:
+                        txt = "<b>Sorry, something went wrong!</b>"
                     await (message.edit if message.out else message.reply)(txt)
                 finally:
                     raise e
