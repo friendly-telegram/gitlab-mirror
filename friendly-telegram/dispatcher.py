@@ -46,10 +46,10 @@ class CommandDispatcher:
             func.ratelimit_storage_chat = {}
 
 
-        if not await _handle_ratelimit_data(func.ratelimit_storage_user.setdefault(message.from_id, []),
+        if not await self._handle_ratelimit_data(func.ratelimit_storage_user.setdefault(message.from_id, []),
                                       ratelimit_delay, start_time, 10):
             return False
-        if not await _handle_ratelimit_data(func.ratelimit_storage_chat.setdefault(message.chat_id, []),
+        if not await self._handle_ratelimit_data(func.ratelimit_storage_chat.setdefault(message.chat_id, []),
                                       ratelimit_delay, start_time, 20):
             return False
         return True
