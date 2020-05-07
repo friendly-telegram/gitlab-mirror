@@ -99,14 +99,14 @@ class CommandDispatcher:
             except Exception as e:
                 logging.exception("Command failed")
                 try:
-                    if self._bot:
-                        await message.respond("<b>Sorry, something went wrong!</b>")
+                    if self._security.check(message, security.OWNER | security.SUDO):
+                        txt = "<b>Sorry, something went wrong!</b>"
                     else:
-                        await message.edit("<b>Request failed! Request was</b> <code>"
-                                           + utils.escape_html(message.message)
-                                           + "</code><b>. Please report it in the support group "
-                                           "(</b><code>{0}support</code><b>) along with the logs "
-                                           "(</b><code>{0}logs error</code><b>)</b>".format(prefix))
+                        txt = ("<b>Request failed! Request was</b> <code>" + utils.escape_html(message.message)
+                               + "</code><b>. Please report it in the support group "
+                               "(</b><code>{0}support</code><b>) along with the logs "
+                               "(</b><code>{0}logs error</code><b>)</b>").format(prefix)
+                    await (message.edit if message.out else message.reply)(txt)
                 finally:
                     raise e
 
