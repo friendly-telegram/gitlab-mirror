@@ -15,6 +15,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import time
 
 from . import utils, main, security
 
@@ -33,7 +34,7 @@ class CommandDispatcher:
         self._cached_username = (await client.get_me()).username.lower()
 
     async def _handle_ratelimit(self, message, func):
-        if self._security.check(message, security.OWNER | security.SUDO | security.SUPPORT):
+        if await self._security.check(message, security.OWNER | security.SUDO | security.SUPPORT):
             return True
         start_time = time.time()
         if hasattr(func, "__func__"):
@@ -116,7 +117,8 @@ class CommandDispatcher:
         logging.debug(tag[0])
         txt, func = self._modules.dispatch(tag[0])
         if func is not None:
-            await self._handle_ratelimit(message, func)
+            if not await self._handle_ratelimit(message, func):
+                return
             if not await self._security.check(message, func):
                 return
             message.message = txt + message.message[len(command):]
