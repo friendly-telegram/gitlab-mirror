@@ -203,12 +203,14 @@ class SecurityManager:
             if message.is_channel and message.is_group:
                 participant = await message.client(GetParticipantRequest(await message.get_input_chat(),
                                                                          await message.get_input_sender()))
+                participant = participant.participant
                 if isinstance(participant, telethon.types.ChannelParticipantCreator):
                     return True
                 if isinstance(participant, telethon.types.ChannelParticipantAdmin):
                     if self._any_admin and f_group_admin_any:
                         return True
                     rights = participant.admin_rights
+
                     if f_group_admin:
                         return True
                     if f_group_admin_add_admins and rights.add_admins:
@@ -238,4 +240,4 @@ class SecurityManager:
                 if isinstance(participant, telethon.types.ChatParticipantAdmin):
                     if f_group_admin_any:
                         return True
-            return False
+        return False
