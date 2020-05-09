@@ -67,7 +67,7 @@ class TestMod(loader.Module):
         except ValueError:
             # It's not an int. Maybe it's a loglevel
             lvl = getattr(logging, args[0].upper(), None)
-        if lvl is None:
+        if isinstance(lvl, int):
             await utils.answer(message, self.strings("bad_loglevel", message))
             return
         [handler] = logging.getLogger().handlers
