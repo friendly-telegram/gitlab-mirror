@@ -14,6 +14,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import functools
 import logging
 import telethon
 from telethon.tl.functions.channels import GetParticipantRequest
@@ -161,10 +162,6 @@ class SecurityManager:
         if not self._owner:
             self._owner.append((await client.get_me(True)).user_id)
 
-    def check(self, *args, **kwargs):
-        # This wrapper function will cause the function to raise if you don't await it
-        return SafeCoroutine(self._check(*args, **kwargs))
-
     async def _check(self, message, func):
         if isinstance(func, int):
             config = func
@@ -252,3 +249,8 @@ class SecurityManager:
                     if f_group_admin_any:
                         return True
         return False
+
+    @functools.wraps(_check)
+    def check(self, *args, **kwargs):
+        # This wrapper function will cause the function to raise if you don't await it
+        return SafeCoroutine(self._check(*args, **kwargs))
