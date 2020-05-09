@@ -284,7 +284,7 @@ class RaphielgangConfig():
 # Please don't refactor this class. Even while writing it only God knew how it worked.
 
 
-__hours_wasted_here = 5
+__hours_wasted_here = 6
 
 
 # // don't touch
