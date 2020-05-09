@@ -208,7 +208,7 @@ class SecurityManager:
             return True
 
         if f_group_admin_any or f_group_owner:
-            if message.is_channel and message.is_group:
+            if message.is_channel and message.is_group:  # TODO support channels
                 participant = await message.client(GetParticipantRequest(await message.get_input_chat(),
                                                                          await message.get_input_sender()))
                 participant = participant.participant
