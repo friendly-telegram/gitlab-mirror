@@ -63,10 +63,10 @@ class Translator:
                     # We can't access the channel
                     logger.warning("No translation pack found for %r", pack, exc_info=True)
                     continue
-                if not message.document:
-                    logger.info("Last message in translation pack %r has no document", pack)
+                if not message.document or not message.entities:
+                    logger.info("Last message in translation pack %r has no document/entities", pack)
                 found = False
-                for ent in filter(lambda x: isinstance(x, MessageEntityHashtag), message.entities or []):
+                for ent in filter(lambda x: isinstance(x, MessageEntityHashtag), message.entities):
                     if message.message[ent.offset:ent.offset + ent.length] == MAGIC and message.file:
                         logger.debug("Got translation message")
                         found = True
