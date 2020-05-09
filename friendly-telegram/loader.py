@@ -47,6 +47,7 @@ MODULES_NAME = "modules"
 
 
 def translatable_docstring(cls):
+    """Decorator that makes triple-quote docstrings translatable"""
     @functools.wraps(cls.config_complete)
     def config_complete(self, *args, **kwargs):
         for command, func in get_commands(cls).items():
@@ -68,6 +69,7 @@ tds = translatable_docstring  # Shorter name for modules to use
 
 
 def ratelimit(func):
+    """Decorator that causes ratelimiting for this command to be enforced more strictly"""
     func.ratelimit = True
     return func
 
@@ -123,6 +125,7 @@ class Module():
 
 
 def get_commands(mod):
+    """Introspect the module to get its commands"""
     # https://stackoverflow.com/a/34452/5509575
     return {method_name[:-3]: getattr(mod, method_name) for method_name in dir(mod)
             if callable(getattr(mod, method_name)) and method_name[-3:] == "cmd"}
