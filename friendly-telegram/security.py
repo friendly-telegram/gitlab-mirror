@@ -151,11 +151,11 @@ class SecurityManager:
         # TODO in the future this will be backed up by blocking the inspect module at runtime and blocking __setattr__
         self._any_admin = db.get(__name__, "any_admin", False)
         self._default = db.get(__name__, "default", DEFAULT_PERMISSIONS)
-        self._owner = db.get(__name__, "owner", [])
-        self._sudo = db.get(__name__, "sudo", [])
-        self._support = db.get(__name__, "support", [])
+        self._owner = db.get(__name__, "owner", []).copy()
+        self._sudo = db.get(__name__, "sudo", []).copy()
+        self._support = db.get(__name__, "support", []).copy()
         self._bounding_mask = db.get(__name__, "bounding_mask", -1 if bot else DEFAULT_PERMISSIONS)
-        self._perms = db.get(__name__, "masks", {})
+        self._perms = db.get(__name__, "masks", {}).copy()
         self._db = db
 
     async def init(self, client):
