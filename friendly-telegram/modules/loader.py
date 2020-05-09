@@ -113,7 +113,6 @@ class LoaderMod(loader.Module):
         self.config = loader.ModuleConfig("MODULES_REPO",
                                           "https://gitlab.com/friendly-telegram/modules-repo/-/raw/master",
                                           lambda m: self.strings("repo_config_doc", m))
-        self._pending_setup = []
 
     @loader.owner
     async def dlmodcmd(self, message):
@@ -260,11 +259,6 @@ class LoaderMod(loader.Module):
         if message is not None:
             await utils.answer(message, self.strings("loaded", message))
         return True
-
-    def register_and_configure(self, instance):
-        self.allmodules.register_module(instance)
-        self.allmodules.send_config_one(instance, self._db, self.babel)
-        self._pending_setup.append(self.allmodules.send_ready_one(instance, self._client, self._db, self.allclients))
 
     @loader.owner
     async def unloadmodcmd(self, message):
