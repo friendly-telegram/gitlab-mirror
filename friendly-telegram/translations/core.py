@@ -60,7 +60,7 @@ class Translator:
                 try:
                     [message] = await client.get_messages(pack, 1)
                 except (ValueError, telethon.errors.rpcerrorlist.ChannelPrivateError):
-                    # There is no message with matching magic
+                    # We can't access the channel
                     logger.warning("No translation pack found for %r", pack, exc_info=True)
                     continue
                 if not message.document:
