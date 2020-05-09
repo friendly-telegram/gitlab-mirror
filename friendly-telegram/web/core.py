@@ -29,9 +29,6 @@ from . import initial_setup, root, auth, translate, config, settings
 def ratelimit(get_storage, secret_to_uid):
     @web.middleware
     async def ratelimit_middleware(request, handler):
-        if "secret" in request.cookies:
-            if secret_to_uid(request.cookies["secret"]) is not None:
-                return await handler(request)  # don't ratelimit authenticated requests
         storage = get_storage(handler)
         if not hasattr(storage, "_ratelimit"):
             storage.setdefault("ratelimit", collections.defaultdict(lambda: 0))
@@ -39,6 +36,12 @@ def ratelimit(get_storage, secret_to_uid):
             storage.setdefault("last_request", collections.defaultdict(lambda: 0))
         if storage["last_request"][request.remote] > time.time() - 30:
             # Maybe ratelimit, was requested within 30 seconds
+            if "secret" in request.cookies:
+                if storage["ratelimit"][request.remote] > 50:
+                    return web.Response(status=429)
+                await asyncio.sleep(storage["ratelimit"][request.remote] / 10)
+                if secret_to_uid(request.cookies["secret"]) is not None:
+                    return await handler(request)  # don't ratelimit authenticated requests
             last = storage["ratelimit_last"][request.remote]
             storage["ratelimit_last"][request.remote] = storage["ratelimit"][request.remote]
             storage["ratelimit"][request.remote] += last
