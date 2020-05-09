@@ -61,6 +61,8 @@ class Web:
                     await self.client_data[uid][1].send_message(owner, msg)
                 except Exception:
                     logging.warning("Failed to send code to owner", exc_info=True)
+                    # Couldn't send the code, print instead
+                    print(msg)  # noqa: T001
         else:
             # Who to send code to? No idea.
             print(msg)  # noqa: T001
