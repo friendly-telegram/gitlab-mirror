@@ -87,13 +87,12 @@ class Translator:
     def set_preferred_languages(self, languages):
         self._languages = languages
 
-    def getkey(self, key, message=None):
+    def getkey(self, key, lang_code=None):
         locales = []
         for locale, strings in self._data.items():
             if key in strings:
                 locales += [locale]
-        target_locales = getattr(getattr(message, "sender", None), "lang_code", None)
-        target_locales = [target_locales] if target_locales else self._languages
+        target_locales = [lang_code] if lang_code else self._languages
         locale = negotiate_locale(target_locales, locales)
         return self._data.get(locale, {}).get(key, False)
 

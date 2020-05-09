@@ -25,7 +25,13 @@ class Strings:
         return self._babel.getkey(self._prefix + key) or self._strings[key]
 
     def __call__(self, key, message=None):
-        return self._babel.getkey(self._prefix + "." + key, message) or self._strings[key]
+        if isinstance(message, str):
+            lang_code = message
+        elif message is None:
+            lang_code = None
+        else:
+            lang_code = getattr(getattr(message, "sender", None), "lang_code", None)
+        return self._babel.getkey(self._prefix + "." + key, lang_code) or self._strings[key]
 
     def __iter__(self):
         return self._strings.__iter__()
