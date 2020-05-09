@@ -36,6 +36,7 @@ class YourMod(loader.Module):
     def __init__(self):
         self.config = loader.ModuleConfig("CONFIG_STRING", "hello", lambda m: self.strings("cfg_doc", m))
 
+    @loader.unrestricted  # security level, defaults to OWNER | SUDO
     async def examplecmd(self, message):
         """Does something when you type .example (hence, named examplecmd)"""
         logger.debug("We logged something!")
