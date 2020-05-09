@@ -14,6 +14,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 import time
 
@@ -45,12 +46,11 @@ class CommandDispatcher:
         if not hasattr(func, "ratelimit_storage_chat"):
             func.ratelimit_storage_chat = {}
 
-
         if not await self._handle_ratelimit_data(func.ratelimit_storage_user.setdefault(message.from_id, []),
-                                      ratelimit_delay, start_time, 10):
+                                                 ratelimit_delay, start_time, 10):
             return False
         if not await self._handle_ratelimit_data(func.ratelimit_storage_chat.setdefault(message.chat_id, []),
-                                      ratelimit_delay, start_time, 20):
+                                                 ratelimit_delay, start_time, 20):
             return False
         return True
 

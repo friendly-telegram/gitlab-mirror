@@ -31,6 +31,8 @@ class CoreMod(loader.Module):
                "too_many_args": "<b>Too many args</b>",
                "blacklisted": "<b>Chat {} blacklisted from userbot</b>",
                "unblacklisted": "<b>Chat {} unblacklisted from userbot</b>",
+               "user_blacklisted": "<b>User {} blacklisted from userbot</b>",
+               "user_unblacklisted": "<b>User {} unblacklisted from userbot</b>",
                "what_prefix": "<b>What should the prefix be set to?</b>",
                "prefix_set": ("<b>Command prefix updated. Type</b> <code>{newprefix}setprefix {oldprefix}"
                               "</code> <b>to change it back</b>"),
@@ -84,6 +86,35 @@ class CoreMod(loader.Module):
         self._db.set(main.__name__, "blacklist_chats",
                      list(set(self._db.get(main.__name__, "blacklist_chats", [])) - set([chatid])))
         await utils.answer(message, self.strings("unblacklisted", message).format(chatid))
+
+    async def getuser(self, message):
+        try:
+            return int(utils.get_args(message)[0])
+        except (ValueError, IndexError):
+            reply = await message.get_reply_message()
+            if not reply:
+                if message.is_private:
+                    return message.to_id.user_id
+                else:
+                    await utils.answer(message, self.strings("who_to_unblacklist", message))
+                    return
+            else:
+                return (await message.get_reply_message()).from_id
+
+    async def blacklistusercmd(self, message):
+        """.blacklistuser [id]
+           Prevent this user from running any commands"""
+        user = await self.getuser(message)
+        self._db.set(main.__name__, "blacklist_users", self._db.get(main.__name__, "blacklist_users", []) + [user])
+        await utils.answer(message, self.strings("user_blacklisted", message).format(user))
+
+    async def unblacklistusercmd(self, message):
+        """.unblacklistuser [id]
+           Allow this user to run permitted commands"""
+        user = await self.getuser(message)
+        self._db.set(main.__name__, "blacklist_users",
+                     list(set(self._db.get(main.__name__, "blacklist_users", [])) - set([user])))
+        await utils.answer(message, self.strings("user_unblacklisted", message).format(user))
 
     @loader.owner
     async def setprefixcmd(self, message):

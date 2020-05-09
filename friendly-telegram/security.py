@@ -18,6 +18,8 @@ import logging
 import telethon
 from telethon.tl.functions.channels import GetParticipantRequest
 
+from . import main
+
 logger = logging.getLogger(__name__)
 
 
@@ -125,7 +127,7 @@ def _sec(func, flags):
 
 class SafeCoroutine:
     def __init__(self, coroutine):
-      self._coroutine = coroutine
+        self._coroutine = coroutine
 
     def __await__(self):
         return self._coroutine.__await__()
@@ -135,6 +137,11 @@ class SafeCoroutine:
 
     def __eq__(self, other):
         raise ValueError("Trying to compute equality of un-awaited security result")
+
+    def __repr__(self):
+        return "<unawaited secure coroutine {} at {}>".format(repr(self._coroutine), hex(id(self)))
+
+    __str__ = __repr__
 
 
 class SecurityManager:
@@ -148,6 +155,7 @@ class SecurityManager:
         self._support = db.get(__name__, "support", [])
         self._bounding_mask = db.get(__name__, "bounding_mask", -1 if bot else DEFAULT_PERMISSIONS)
         self._perms = db.get(__name__, "masks", {})
+        self._db = db
 
     async def init(self, client):
         if not self._owner:
@@ -192,6 +200,9 @@ class SecurityManager:
             return True
         if f_support and message.from_id in self._support:
             return True
+
+        if message.from_id in self._db.get(main.__name__, "blacklist_users", []):
+            return False
 
         if f_pm and message.is_private:
             return True
