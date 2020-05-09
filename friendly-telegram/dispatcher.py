@@ -31,8 +31,9 @@ class CommandDispatcher:
 
     async def init(self, client):
         await self._security.init(client)
-        self._me = (await client.get_me(True)).user_id
-        self._cached_username = (await client.get_me()).username.lower()
+        me = await client.get_me()
+        self._me = me.id
+        self._cached_username = me.username.lower()
 
     async def _handle_ratelimit(self, message, func):
         if await self._security.check(message, security.OWNER | security.SUDO | security.SUPPORT):
