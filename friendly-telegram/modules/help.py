@@ -38,7 +38,7 @@ class HelpMod(loader.Module):
                "single_cmd": "\n• <code><u>{}</u></code>\n",
                "undoc_cmd": "There is no documentation for this command",
                "all_header": ("<b>Help for</b> <a href='https://t.me/friendlytgbot'>Friendly-Telegram</a>\n"
-                              "For more help on how to use a command, type <code>.help &lt;module name&gt;</code>\n\n"
+                              "For more help on how to use a command, type <code>{}help &lt;module name&gt;</code>\n\n"
                               "<b>Available Modules:</b>"),
                "mod_tmpl": "\n• <b>{}</b>",
                "first_cmd_tmpl": ": <code>{}",
@@ -79,7 +79,9 @@ class HelpMod(loader.Module):
                 else:
                     reply += self.strings("undoc_cmd", message)
         else:
-            reply = self.strings("all_header", message)
+            reply = self.strings("all_header", message).format(utils.escape_html((self.db.get(main.__name__,
+                                                                                              "command_prefix",
+                                                                                              False) or ".")[0]))
             for mod in self.allmodules.modules:
                 reply += self.strings("mod_tmpl", message).format(mod.strings("name", message))
                 first = True
