@@ -170,7 +170,6 @@ class CoreMod(loader.Module):
             return
         pack = args[0]
         if await message.client.is_bot():
-            # TODO check filename and save
             if not pack.isalnum():
                 await utils.answer(message, self.strings("bad_pack", message))
                 return
