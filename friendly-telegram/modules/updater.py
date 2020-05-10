@@ -65,8 +65,6 @@ class UpdaterMod(loader.Module):
     @loader.owner
     async def restartcmd(self, message):
         """Restarts the userbot"""
-        logger.debug(self._me)
-        logger.debug(self.allclients)
         if self.config["AUDIO"]:
             msg = (await utils.answer(message, SHUTDOWN, voice_note=True,
                                       caption=self.strings("restarting_caption", message)))[0]
@@ -99,7 +97,7 @@ class UpdaterMod(loader.Module):
     @loader.owner
     async def downloadcmd(self, message):
         """Downloads userbot updates"""
-        await utils.answer(message, self.strings("downloading", message))
+        message = await utils.answer(message, self.strings("downloading", message))
         await self.download_common()
         await utils.answer(message, self.strings("downloaded", message))
 
