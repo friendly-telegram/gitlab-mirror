@@ -50,7 +50,7 @@ class Web:
                 (security.__name__, "support", [])]
         db = self.client_data[uid][2]
         return {"checked": functools.partial(self.is_checked, db), "modules": self.client_data[uid][0].modules,
-                **security.BITMAP,
+                "name": lambda x: x.__name__ if x else "", **security.BITMAP,
                 **{key: format(self.client_data[uid][2].get(mod, key, default)) for mod, key, default in keys}}
 
     def is_checked(self, db, bit, func, func_name):
