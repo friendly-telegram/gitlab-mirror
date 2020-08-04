@@ -134,6 +134,7 @@ class UpdaterMod(loader.Module):
         msgs = await utils.answer(message, self.strings("downloading", message))
         req_update = await self.download_common()
         if self.config["AUDIO"]:
+            logging.debug(SHUTDOWN.tell())
             message = await message.client.send_file(message.chat_id, SHUTDOWN,
                                                      caption=self.strings("installing", message), voice_note=True)
             await asyncio.gather(*[msg.delete() for msg in msgs])
