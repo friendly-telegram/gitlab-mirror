@@ -62,7 +62,7 @@ class UpdaterMod(loader.Module):
     async def restartcmd(self, message):
         """Restarts the userbot"""
         if self.config["AUDIO"]:
-            _shutdown = io.bytesIO(SHUTDOWN)
+            _shutdown = io.BytesIO(SHUTDOWN)
             _shutdown.name = "voice.mp3"
             msg = (await utils.answer(message, _shutdown, voice_note=True,
                                       caption=self.strings("restarting_caption", message)))[0]
@@ -136,7 +136,7 @@ class UpdaterMod(loader.Module):
         msgs = await utils.answer(message, self.strings("downloading", message))
         req_update = await self.download_common()
         if self.config["AUDIO"]:
-            _shutdown = io.bytesIO(SHUTDOWN)
+            _shutdown = io.BytesIO(SHUTDOWN)
             _shutdown.name = "voice.mp3"
             message = await message.client.send_file(message.chat_id, _shutdown,
                                                      caption=self.strings("installing", message), voice_note=True)
@@ -153,7 +153,7 @@ class UpdaterMod(loader.Module):
             self._db.set(__name__, "selfupdatechat", None)
             self._db.set(__name__, "selfupdatemsg", None)
             if self.config["AUDIO"]:
-                _startup = io.bytesIO(STARTUP)
+                _startup = io.BytesIO(STARTUP)
                 _startup.name = "voice.mp3"
                 await message.client.send_file(message.chat_id, _startup, voice_note=True,
                                                caption=self.strings("already_updated", message))
@@ -189,7 +189,7 @@ class UpdaterMod(loader.Module):
             logger.debug("Self update successful! Edit message")
             msg = self.strings("success") if random.randint(0, 10) != 0 else self.strings["success_meme"]
         if self.config["AUDIO"]:
-            _startup = io.bytesIO(STARTUP)
+            _startup = io.BytesIO(STARTUP)
             _startup.name = "voice.mp3"
             await client.send_file(self._db.get(__name__, "selfupdatechat"), _startup, caption=msg, voice_note=True)
             await client.delete_messages(self._db.get(__name__, "selfupdatechat"),
